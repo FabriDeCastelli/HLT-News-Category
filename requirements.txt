@@ -4,3 +4,5 @@ isort
 mypy
 doc8
 pre-commit
+pandas~=2.0.3
+bertopic~=0.16.0
