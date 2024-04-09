@@ -23,4 +23,3 @@ repos:
     rev: v3.1.0
     hooks:
       - id: pylint
-        args: [--autofix]
