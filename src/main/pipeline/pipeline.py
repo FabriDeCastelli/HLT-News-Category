@@ -26,4 +26,11 @@ class Pipeline:
         """
         Run the pipeline.
         """
-        return reduce(lambda previous, step: step(previous), self.steps, data)
+        return list(
+            map(
+                lambda item: reduce(
+                    lambda previous, step: step(previous), self.steps, item
+                ),
+                data,
+            )
+        )
