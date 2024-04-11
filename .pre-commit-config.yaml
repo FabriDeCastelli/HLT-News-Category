@@ -7,11 +7,6 @@ repos:
       - id: check-yaml
       - id: check-merge-conflict
 
-  - repo: https://github.com/FalconSocial/pre-commit-python-sorter
-    rev: 1.0.4
-    hooks:
-      - id: python-import-sorter
-        args: [ '--diff' ]
 
   - repo: https://github.com/psf/black
     rev: 24.3.0
