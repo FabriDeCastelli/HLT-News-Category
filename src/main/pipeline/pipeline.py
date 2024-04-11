@@ -1,7 +1,7 @@
 """ Pipeline module. """
 
 from functools import reduce
-from typing import Callable
+from typing import Callable, List
 
 
 class Pipeline:
@@ -9,7 +9,7 @@ class Pipeline:
     Interface for pipelines.
     """
 
-    steps: list[Callable] = []
+    steps: List[Callable] = []
 
     def __init__(self, steps=None):
         if steps is None:
