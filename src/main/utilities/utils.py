@@ -56,7 +56,7 @@ def clean(df):
     return df
 
 
-def get_dataset(filepath=DATASET_PATH):
+def get_dataset(filepath=DATASET_PATH, remove_target=False):
     """
     Read the dataset from the given filepath and return the dataframe.
 
@@ -66,6 +66,8 @@ def get_dataset(filepath=DATASET_PATH):
     df = pd.read_json(filepath, lines=True)
     df = label_renaming(df)
     df = clean(df)
+    if remove_target:
+        df = df.drop(columns=["category"])
     return df
 
 
