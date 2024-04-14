@@ -1,6 +1,6 @@
 """ Pipeline module. """
 
-from config.config import LOGISTIC_PIPELINE_DATASET_PATH
+from config.config import PIPELINE_DATASET_PATH
 from datetime import datetime
 from functools import reduce
 from joblib import Parallel, delayed
@@ -12,7 +12,7 @@ import pandas as pd
 
 class Pipeline:
     """
-    Interface for pipelines.
+    Pipeline class. Contains a list of steps to be executed in parallel on a dataset.
     """
 
     steps: List[Callable] = []
@@ -28,7 +28,7 @@ class Pipeline:
         """
         self.steps.append(step)
 
-    def execute(self, data: pd.DataFrame, save=True):
+    def execute(self, data: pd.DataFrame, model=None, save=False):
         """
         Run the pipeline in parallel.
         The pipeline is run in parallel by splitting the data into chunks and running
@@ -37,19 +37,28 @@ class Pipeline:
         The results are flattened and returned.
 
         :param data: The data to run the pipeline.
+        :param model: A string representing the caller model.
+        :param save: A boolean indicating whether to save the data to a file.
         :return: The data after the processing.
         """
 
-        def execute_chuck(data):
+        assert len(self.steps) > 0, "Pipeline has no steps."
+        assert isinstance(data, pd.DataFrame), "Data is not a pandas DataFrame."
+        assert not save or model is not None, "Model is not provided."
+
+        def execute_chuck(chunk):
             """
-            Run the pipeline.
+            Runs the pipeline.
+
+            :param chunk: The chunk of data to run the pipeline on.
+            :return: The chunk after the processing.
             """
             return list(
                 map(
                     lambda item: reduce(
                         lambda previous, step: step(previous), self.steps, item
                     ),
-                    data,
+                    chunk,
                 )
             )
 
@@ -66,8 +75,7 @@ class Pipeline:
             results[column] = [result for chunk in results[column] for result in chunk]
             print("Time taken: ", datetime.now() - now)
 
-        print(results)
         df = pd.DataFrame(results)
-        if save:
-            df.to_csv(LOGISTIC_PIPELINE_DATASET_PATH, index=False)
+        if model is not None:
+            df.to_csv(PIPELINE_DATASET_PATH.format(model), index=False)
         return df

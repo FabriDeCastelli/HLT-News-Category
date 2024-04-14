@@ -8,9 +8,7 @@ PROJECT_FOLDER_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__))
 # DATASET PATH
 DATASET_PATH = PROJECT_FOLDER_PATH + "/dataset/News_Category_Dataset.json"
 
-LOGISTIC_PIPELINE_DATASET_PATH = (
-    PROJECT_FOLDER_PATH + "/dataset/logistic/logistic_pipeline_dataset.csv"
-)
+PIPELINE_DATASET_PATH = PROJECT_FOLDER_PATH + "/dataset/preprocessing/{}.csv"
 
 # RENAME CATEGORIES
 life = ["WELLNESS", "TRAVEL", "STYLE & BEAUTY", "FOOD & DRINK"]
