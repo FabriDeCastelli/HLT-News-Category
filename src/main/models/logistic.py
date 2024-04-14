@@ -2,6 +2,7 @@
 
 from src.main.models.model import Model
 from src.main.pipeline.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression
 
 
 class Logistic(Model):
@@ -9,9 +10,10 @@ class Logistic(Model):
     Multinomial Logistic Regression class.
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         super().__init__()
-        self.pipeline = Pipeline()
+        self.logistic = LogisticRegression(**kwargs)
+        self.pipeline = None
 
     def set_pipeline(self, pipeline):
         self.pipeline = Pipeline(pipeline)
@@ -19,8 +21,8 @@ class Logistic(Model):
     def run_pipeline(self, data):
         return self.pipeline.execute(data)
 
-    def fit(self, inputs, targets):
-        raise NotImplementedError()
+    def fit(self, inputs, targets, sample_weight=None):
+        self.logistic.fit(inputs, targets, sample_weight)
 
     def predict(self, inputs):
         raise NotImplementedError()
