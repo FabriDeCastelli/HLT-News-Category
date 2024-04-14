@@ -48,7 +48,6 @@ def clean(df):
     :param df: The dataframe containing the dataset.
     :return: The cleaned dataframe.
     """
-    df = df[df["category"].isin(new_names)]
     df.drop(labels=drop_column, inplace=True, axis=1)
     df = df[df["short_description"] != ""]
     df = df.drop_duplicates(subset="short_description")
@@ -65,6 +64,7 @@ def get_dataset(filepath=DATASET_PATH, remove_target=False):
     """
     df = pd.read_json(filepath, lines=True)
     df = label_renaming(df)
+    df = df[df["category"].isin(new_names)]
     df = clean(df)
     if remove_target:
         df = df.drop(columns=["category"])
