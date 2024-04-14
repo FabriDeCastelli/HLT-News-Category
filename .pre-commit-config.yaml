@@ -13,9 +13,3 @@ repos:
     hooks:
       - id: black
         args: [--fast, ]
-
-  - repo: https://github.com/PyCQA/pylint
-    rev: v3.1.0
-    hooks:
-      - id: pylint
-        args: [--disable=import-error]
