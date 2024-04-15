@@ -2,6 +2,11 @@
 
 import os
 
+import nltk
+import spacy
+from sklearn.feature_extraction.text import TfidfVectorizer
+from nltk.tokenize import word_tokenize
+
 # PROJECT FOLDER PATH
 PROJECT_FOLDER_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -18,3 +23,11 @@ sports = ["SPORTS"]
 politics = ["POLITICS"]
 new_names = ["Life", "Entertainment", "Voices", "Sports", "Politics"]
 drop_column = ["link", "authors", "date"]
+
+nltk.download("stopwords")
+nlp = spacy.load("en_core_web_sm")
+stemmer = nltk.SnowballStemmer("english")
+vectorizer = TfidfVectorizer(
+    tokenizer=word_tokenize,
+    stop_words="english",
+)

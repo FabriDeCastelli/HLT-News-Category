@@ -2,10 +2,12 @@
 
 from config.config import PIPELINE_DATASET_PATH
 from datetime import datetime
+from itertools import groupby
 from functools import reduce
 from joblib import Parallel, delayed
 from typing import Callable, List
 
+import inspect
 import os
 import pandas as pd
 
@@ -18,15 +20,18 @@ class Pipeline:
     steps: List[Callable] = []
 
     def __init__(self, steps=None):
-        if steps is None:
+        if steps is None or steps == []:
             steps = []
-        self.steps = steps
 
-    def add_step(self, step: Callable):
-        """
-        Add a step to the pipeline.
-        """
-        self.steps.append(step)
+        def is_parallelizable(f):
+            return inspect.signature(f).parameters.get("parallel_mode").default
+
+        self.parallel_execution_mode = is_parallelizable(steps[0]) if steps else False
+
+        self.steps = [list(group) for _, group in groupby(steps, is_parallelizable)]
+
+    def switch_parallel_execution_mode(self):
+        self.parallel_execution_mode = not self.parallel_execution_mode
 
     def execute(self, data: pd.DataFrame, model=None, save=False):
         """
@@ -46,35 +51,45 @@ class Pipeline:
         assert isinstance(data, pd.DataFrame), "Data is not a pandas DataFrame."
         assert not save or model is not None, "Model is not provided."
 
-        def execute_chuck(chunk):
+        def run_chunk(functions_chunk, data_chunk):
             """
             Runs the pipeline.
 
-            :param chunk: The chunk of data to run the pipeline on.
+            :param functions_chunk: The functions to run on the data.
+            :param data_chunk: The data to run the functions on.
             :return: The chunk after the processing.
             """
             return list(
                 map(
                     lambda item: reduce(
-                        lambda previous, step: step(previous), self.steps, item
+                        lambda previous, step: step(previous), functions_chunk, item
                     ),
-                    chunk,
+                    data_chunk,
                 )
             )
 
         cpu_count = os.cpu_count()
         results = {}
 
-        print("Running pipeline in parallel: number of cpu's: ", cpu_count)
-        for column in data.columns:
-            chunks = [data[column][i::cpu_count] for i in range(cpu_count)]
-            now = datetime.now()
-            results[column] = Parallel(n_jobs=cpu_count)(
-                delayed(execute_chuck)(chunk) for chunk in chunks
-            )
-            results[column] = [result for chunk in results[column] for result in chunk]
-            print("Time taken: ", datetime.now() - now)
+        now = datetime.now()
 
+        for column in data.columns:
+
+            for function_chunk in self.steps:
+                if self.parallel_execution_mode:
+                    chunks = [data[column][i::cpu_count] for i in range(cpu_count)]
+                    results[column] = Parallel(n_jobs=cpu_count)(
+                        delayed(run_chunk)(function_chunk, chunk) for chunk in chunks
+                    )
+                    results[column] = [
+                        result for chunk in results[column] for result in chunk
+                    ]
+                else:
+                    results[column] = run_chunk(function_chunk, data[column])
+
+                self.switch_parallel_execution_mode()
+
+        print("Pipeline execution time: ", datetime.now() - now)
         df = pd.DataFrame(results)
         if model is not None:
             df.to_csv(PIPELINE_DATASET_PATH.format(model), index=False)
