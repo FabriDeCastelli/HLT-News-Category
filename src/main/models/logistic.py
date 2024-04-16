@@ -4,8 +4,9 @@ import os
 from typing import Callable, List
 
 import pandas as pd
+from scipy.sparse import load_npz
 
-from src.main.models.model import Model
+from main.models.model import Model
 from src.main.pipeline.pipeline import Pipeline
 from config.config import PIPELINE_DATASET_PATH
 from sklearn.linear_model import LogisticRegression
@@ -39,19 +40,20 @@ class Logistic(Model):
         """
         self.pipeline = Pipeline(pipeline)
 
-    def run_pipeline(self, data: pd.DataFrame):
+    def run_pipeline(self, data: pd.DataFrame, save=True):
         """
         Run the pipeline. If the pipeline for this model has already been run, then the dataset is read from the file.
 
         :param data: the data to run the pipeline on.
+        :param save: a boolean indicating whether to save the data to a file.
         :return: the data after the processing.
         """
         assert self.pipeline is not None, "Pipeline is not set."
         assert isinstance(data, pd.DataFrame), "Data is not a pandas DataFrame."
 
-        path = PIPELINE_DATASET_PATH.format(repr(self))
+        path = PIPELINE_DATASET_PATH.format(repr(self) + ".npz")
         if os.path.exists(path):
-            return pd.read_csv(path)
+            return load_npz(path)
         return self.pipeline.execute(data, model=repr(self), save=True)
 
     def fit(self, inputs, targets, sample_weight=None):
@@ -62,10 +64,17 @@ class Logistic(Model):
         :param targets: the target values
         :param sample_weight: the weights of the samples
         """
-        self.logistic.fit(inputs, targets, sample_weight)
+        self.logistic = self.logistic.fit(inputs, targets, sample_weight)
 
-    def predict(self, inputs):
-        raise NotImplementedError()
+    def evaluate(self, inputs, targets):
+        """
+        Evaluate the model.
+
+        :param inputs: the data to evaluate the model on
+        :param targets: the target values
+        :return: the score of the model
+        """
+        return self.logistic.score(inputs, targets)
 
     def __repr__(self):
         return "Logistic"
