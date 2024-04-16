@@ -13,7 +13,7 @@ PROJECT_FOLDER_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__))
 # DATASET PATH
 DATASET_PATH = PROJECT_FOLDER_PATH + "/dataset/News_Category_Dataset.json"
 
-PIPELINE_DATASET_PATH = PROJECT_FOLDER_PATH + "/dataset/preprocessing/{}.csv"
+PIPELINE_DATASET_PATH = PROJECT_FOLDER_PATH + "/dataset/preprocessing/{}"
 
 # RENAME CATEGORIES
 life = ["WELLNESS", "TRAVEL", "STYLE & BEAUTY", "FOOD & DRINK"]
@@ -23,11 +23,12 @@ sports = ["SPORTS"]
 politics = ["POLITICS"]
 new_names = ["Life", "Entertainment", "Voices", "Sports", "Politics"]
 drop_column = ["link", "authors", "date"]
+merged_categories = [life, entertainment, voices, sports, politics]
 
 nltk.download("stopwords")
 nlp = spacy.load("en_core_web_sm")
 stemmer = nltk.SnowballStemmer("english")
 vectorizer = TfidfVectorizer(
-    tokenizer=word_tokenize,
-    stop_words="english",
+    # tokenizer=word_tokenize,
+    # stop_words="english",
 )
