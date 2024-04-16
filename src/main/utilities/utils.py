@@ -1,23 +1,36 @@
 """ This module contains utility functions for the project. """
 
+import os.path
+
 import nltk
 import pandas as pd
 import re
 import string
-from config.config import nlp, vectorizer, stemmer
+
+from scipy.sparse import isspmatrix_csr, save_npz, load_npz
+from config import config
 from nltk.tokenize import casual_tokenize
 from unicodedata import normalize
 
-from config.config import (
-    DATASET_PATH,
-    drop_column,
-    entertainment,
-    life,
-    new_names,
-    politics,
-    sports,
-    voices,
-)
+
+def save_preprocessing(results, model):
+    """
+    Save the preprocessing results to a file.
+
+    :param results: The results to save.
+    :param model: The model to save the results for.
+    """
+    assert model is not None, "Model (filepath) is not provided."
+    assert isinstance(results, dict), "Results is not a dictionary."
+
+    filepath = config.PIPELINE_DATASET_PATH.format(model)
+    if not os.path.exists(filepath):
+        os.makedirs(filepath)
+
+    if ".npz" in filepath:
+        save_npz(filepath, results)
+    else:
+        raise ValueError(f"File extension of {filepath} is not supported for saving.")
 
 
 def label_renaming(df):
@@ -28,42 +41,47 @@ def label_renaming(df):
     :return: The dataframe with the labels renamed.
     """
     di = {}
-    for new, orig in zip(new_names, [life, entertainment, voices, sports, politics]):
+    for new, orig in zip(config.new_names, config.merged_categories):
         for label in orig:
             di[label] = new
     return df.replace({"category": di})
 
 
-def clean(df):
+def clean(df, merge=True):
     """
     Clean the dataset by dropping columns and removing duplicates.
 
     :param df: The dataframe containing the dataset.
+    :param merge: A boolean indicating whether to merge short_description and headline.
     :return: The cleaned dataframe.
     """
-    df.drop(labels=drop_column, inplace=True, axis=1)
+    df.drop(labels=config.drop_column, inplace=True, axis=1)
     df = df[df["short_description"] != ""]
     df = df.drop_duplicates(subset="short_description")
     df = df.drop_duplicates(subset="headline")
     df = df[~df["short_description"].str.contains("https")]
+    if merge:
+        df["full_article"] = df["headline"] + " " + df["short_description"]
+        df = df.drop(columns=["headline", "short_description"])
     return df
 
 
-def get_dataset(filepath=DATASET_PATH, remove_target=False):
+def get_dataset(filepath=config.DATASET_PATH, one_hot=False):
     """
     Read the dataset from the given filepath and return the dataframe.
 
+    :param one_hot: A boolean indicating whether to one hot encode the labels.
     :param filepath: The path to the dataset file.
-    :param remove_target: A boolean indicating whether to remove the target column.
     :return: The dataframe containing the dataset.
     """
     df = pd.read_json(filepath, lines=True)
     df = label_renaming(df)
-    df = df[df["category"].isin(new_names)]
+    df = df[df["category"].isin(config.new_names)]
     df = clean(df)
-    if remove_target:
-        df = df.drop(columns=["category"])
-    return df
+    targets = df["category"]
+    if one_hot:
+        targets = pd.get_dummies(targets)
+    return df.drop(columns=["category"]), targets
 
 
 def clean_text(corpus, parallel_mode=True) -> str:
@@ -115,7 +133,7 @@ def lemmatization(corpus, parallel_mode=True) -> str:
     :return: The lemmatized text, as a string.
     """
 
-    doc = nlp(corpus)
+    doc = config.nlp(corpus)
     return " ".join([token.lemma_ for token in doc])
 
 
@@ -123,7 +141,7 @@ def stemming(corpus, parallel_mode=True):
     """
     Stem the text.
     """
-    res = " ".join(stemmer.stem(word) for word in corpus.split(" "))
+    res = " ".join(config.stemmer.stem(word) for word in corpus.split(" "))
     return res
 
 
@@ -142,6 +160,22 @@ def tfidf_vectorizer(corpus, parallel_mode=False):
     :param parallel_mode: A boolean indicating whether to run the function in parallel.
     :return: The vectorized text.
     """
-    if not isinstance(corpus, list):
-        corpus = [corpus]
-    return vectorizer.fit_transform(corpus)
+
+    return config.vectorizer.fit_transform(corpus)
+
+
+def load_preprocessing(model):
+    """
+    Load the preprocessing results from a file.
+
+    :param model: The model to load the preprocessing results for.
+    :return: The results from the file.
+    """
+    assert model is not None, "Model (filepath) is not provided."
+    filepath = config.PIPELINE_DATASET_PATH.format(model)
+    if not os.path.exists(filepath):
+        raise FileNotFoundError(f"The file {filepath} does not exist.")
+    if ".npz" in filepath:
+        return load_npz(filepath)
+    else:
+        raise ValueError(f"The given path {filepath} is not a valid path.")
