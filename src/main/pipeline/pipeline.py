@@ -5,6 +5,8 @@ from datetime import datetime
 from itertools import groupby
 from functools import reduce
 from joblib import Parallel, delayed
+from src.main.utilities import utils
+
 from typing import Callable, List
 
 import inspect
@@ -17,18 +19,17 @@ class Pipeline:
     Pipeline class. Contains a list of steps to be executed in parallel on a dataset.
     """
 
-    steps: List[Callable] = []
+    stages: List[Callable] = []
 
-    def __init__(self, steps=None):
-        if steps is None or steps == []:
-            steps = []
+    def __init__(self, stages=None):
+        if stages is None or stages == []:
+            stages = []
 
         def is_parallelizable(f):
             return inspect.signature(f).parameters.get("parallel_mode").default
 
-        self.parallel_execution_mode = is_parallelizable(steps[0]) if steps else False
-
-        self.steps = [list(group) for _, group in groupby(steps, is_parallelizable)]
+        self.parallel_execution_mode = is_parallelizable(stages[0]) if stages else False
+        self.stages = [list(group) for _, group in groupby(stages, is_parallelizable)]
 
     def switch_parallel_execution_mode(self):
         self.parallel_execution_mode = not self.parallel_execution_mode
@@ -47,7 +48,7 @@ class Pipeline:
         :return: The data after the processing.
         """
 
-        assert len(self.steps) > 0, "Pipeline has no steps."
+        assert len(self.stages) > 0, "Pipeline has no steps."
         assert isinstance(data, pd.DataFrame), "Data is not a pandas DataFrame."
         assert not save or model is not None, "Model is not provided."
 
@@ -68,6 +69,18 @@ class Pipeline:
                 )
             )
 
+        def run_whole(functions_chunk, full_data):
+            """
+            Runs the pipeline.
+
+            :param functions_chunk: The functions to run on the data.
+            :param full_data: The data to run the functions on.
+            :return: The chunk after the processing.
+            """
+            return reduce(
+                lambda previous, step: step(previous), functions_chunk, full_data
+            )
+
         cpu_count = os.cpu_count()
         results = {}
 
@@ -75,7 +88,7 @@ class Pipeline:
 
         for column in data.columns:
 
-            for function_chunk in self.steps:
+            for function_chunk in self.stages:
                 if self.parallel_execution_mode:
                     chunks = [data[column][i::cpu_count] for i in range(cpu_count)]
                     results[column] = Parallel(n_jobs=cpu_count)(
@@ -85,12 +98,17 @@ class Pipeline:
                         result for chunk in results[column] for result in chunk
                     ]
                 else:
-                    results[column] = run_chunk(function_chunk, data[column])
+                    results[column] = run_whole(function_chunk, data[column])
 
                 self.switch_parallel_execution_mode()
 
-        print("Pipeline execution time: ", datetime.now() - now)
-        df = pd.DataFrame(results)
-        if model is not None:
-            df.to_csv(PIPELINE_DATASET_PATH.format(model), index=False)
-        return df
+        print(f"Pipeline execution time: {datetime.now() - now}")
+
+        if save and model is not None:
+            utils.save_preprocessing(results, model)
+
+        if os.path.exists(PIPELINE_DATASET_PATH.format(model)):
+            return utils.load_preprocessing(model)
+
+        results = map(results, lambda x: [x] if not isinstance(x, list) else x)
+        return pd.DataFrame(results)
