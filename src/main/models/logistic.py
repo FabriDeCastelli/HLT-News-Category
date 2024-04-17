@@ -6,7 +6,7 @@ from typing import Callable, List
 import pandas as pd
 from scipy.sparse import load_npz
 
-from main.models.model import Model
+from src.main.models.model import Model
 from src.main.pipeline.pipeline import Pipeline
 from config.config import PIPELINE_DATASET_PATH
 from sklearn.linear_model import LogisticRegression
@@ -75,6 +75,15 @@ class Logistic(Model):
         :return: the score of the model
         """
         return self.logistic.score(inputs, targets)
+    
+    def predict(self, data):
+        """
+        Make prediction over data.
+
+        :param data: the data to predict
+        :return: the predicted values
+        """
+        return self.logistic.predict(data)
 
     def __repr__(self):
         return "Logistic"
