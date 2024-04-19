@@ -24,6 +24,7 @@ politics = ["POLITICS"]
 new_names = ["Life", "Entertainment", "Voices", "Sports", "Politics"]
 drop_column = ["link", "authors", "date"]
 merged_categories = [life, entertainment, voices, sports, politics]
+rename_y = {'Entertainment': 0, 'Life': 1, 'Politics': 2, 'Sport': 3, 'Voices': 3}
 
 nltk.download("stopwords")
 nlp = spacy.load("en_core_web_sm")
