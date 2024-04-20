@@ -1,7 +1,7 @@
 """ Multinomial Logistic Regression. """
 from src.main.models.model import Model
 from src.main.pipeline.pipeline import Pipeline
-from config.config import PIPELINE_DATASET_PATH
+from config.config import PIPELINE_DATASET_PATH, MODELS_PATH
 
 import os
 from typing import Callable, List
@@ -10,8 +10,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.sparse import load_npz
-from scipy.stats import uniform
 import numpy as np
+import joblib
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import RandomizedSearchCV
@@ -69,7 +69,10 @@ class Logistic(Model):
         :param targets: the target values
         :param sample_weight: the weights of the samples
         """
-        self.logistic = self.logistic.fit(inputs, targets, sample_weight)
+        if os.path.isfile(os.path.join(MODELS_PATH, 'logistic.pkl')):
+            self.upload_model()
+        else:
+            self.logistic = self.logistic.fit(inputs, targets, sample_weight)
 
 
     def grid_search(self, x_train, y_train, n_iter=30):
@@ -84,9 +87,9 @@ class Logistic(Model):
 
         # Parameter grid for Logistic Regressor
         params = {
-            "penalty": ["l2", "none"],
-            "C": uniform(loc=0.001, scale=5 - 0.001),
-            "solver": ["newton-cg", "lbfgs", "sag", "saga"],
+            "penalty": ["l2"],
+            "C": np.logspace(-3, 3, 7),
+            "solver": ["lbfgs", "sag", "saga"],
             "class_weight": ["balanced", None]
         }
         # Randomized Search
@@ -196,6 +199,26 @@ class Logistic(Model):
         # Show the plot
         plt.show()
         return
+
+    def save_model(self):
+        """
+        Save the model to a file.
+
+        :param path: the path to save the model to
+        """
+
+        joblib.dump(self.logistic, MODELS_PATH + 'logistic.pkl')
+        return
+
+    def upload_model(self):
+        """
+        Load the model from a file.
+
+        :param path: the path to load the model from
+        """
+        self.logistic = joblib.load(MODELS_PATH + 'logistic.pkl')
+        return
+
 
     def __repr__(self):
         return "Logistic"
