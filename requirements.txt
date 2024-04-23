@@ -11,3 +11,5 @@ numpy
 nltk
 scikit-learn
 spacy
+matplotlib
+seaborn

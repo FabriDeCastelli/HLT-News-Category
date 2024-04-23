@@ -15,7 +15,7 @@ import joblib
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import RandomizedSearchCV
-from sklearn.metrics import get_scorer, accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
+from sklearn.metrics import get_scorer, f1_score, precision_score, recall_score, accuracy_score, confusion_matrix
 
 
 class Logistic(Model):
@@ -35,6 +35,12 @@ class Logistic(Model):
         super().__init__()
         self.logistic = LogisticRegression(**kwargs)
         self.pipeline = None
+
+    def set_model(self, model):
+        """
+        Set the model to the Logistic Regression model.
+        """
+        self.logistic = model
 
     def set_pipeline(self, pipeline: List[Callable]):
         """
@@ -88,15 +94,23 @@ class Logistic(Model):
         # Parameter grid for Logistic Regressor
         params = {
             "penalty": ["l2"],
-            "C": np.logspace(-3, 3, 7),
+            "C": [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 1.5],
             "solver": ["lbfgs", "sag", "saga"],
             "class_weight": ["balanced", None]
         }
+
+        scoring = {
+            'accuracy': get_scorer("accuracy"),
+            'f1-micro': get_scorer("f1_micro"),
+            'precision': get_scorer("precision_micro"),
+            'recall': get_scorer("recall_micro")
+        }
+
         # Randomized Search
         rscv = RandomizedSearchCV(
             estimator=self.logistic,
             param_distributions=params,
-            refit=get_scorer("accuracy"),
+            refit="f1-micro",
             n_jobs=-1,
             n_iter=n_iter,
             random_state=42
