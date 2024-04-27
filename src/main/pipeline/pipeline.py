@@ -81,6 +81,10 @@ class Pipeline:
                 lambda previous, step: step(previous), functions_chunk, full_data
             )
 
+        # Load the preprocessing result if it already exists
+        if os.path.exists(os.path.join(PIPELINE_DATASET_PATH, model_file)):
+            return utils.load_preprocessing(model_file)
+        
         cpu_count = os.cpu_count()
         results = {}
 
@@ -107,8 +111,5 @@ class Pipeline:
         if save and model_file is not None:
             utils.save_preprocessing(results, model_file)
 
-        if os.path.exists(os.path.join(PIPELINE_DATASET_PATH, model_file)):
-            return utils.load_preprocessing(model_file)
-
-        results = map(results, lambda x: [x] if not isinstance(x, list) else x)
-        return pd.DataFrame(results)
+        #results = map(results, lambda x: [x] if not isinstance(x, list) else x)
+        return results["full_article"]

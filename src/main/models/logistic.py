@@ -61,10 +61,6 @@ class Logistic(Model):
         """
         assert self.pipeline is not None, "Pipeline is not set."
         assert isinstance(data, pd.DataFrame), "Data is not a pandas DataFrame."
-
-        path = os.path.join(PIPELINE_DATASET_PATH, repr(self)+".npz")
-        if os.path.exists(path):
-            return load_npz(path)
         return self.pipeline.execute(data, model_file=repr(self)+".npz", save=save)
 
     def fit(self, inputs, targets, sample_weight=None):
