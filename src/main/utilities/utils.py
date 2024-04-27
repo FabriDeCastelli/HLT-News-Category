@@ -13,22 +13,25 @@ from nltk.tokenize import casual_tokenize
 from unicodedata import normalize
 
 
-def save_preprocessing(results, model):
+def save_preprocessing(results, model_file):
     """
     Save the preprocessing results to a file.
 
     :param results: The results to save.
     :param model: The model to save the results for.
     """
-    assert model is not None, "Model (filepath) is not provided."
+    assert model_file is not None, "Model (filepath) is not provided."
     assert isinstance(results, dict), "Results is not a dictionary."
 
-    filepath = config.PIPELINE_DATASET_PATH.format(model)
-    if not os.path.exists(filepath):
-        os.makedirs(filepath)
+    filepath = os.path.join(config.PIPELINE_DATASET_PATH, model_file)
+    
+    if not os.path.exists(config.PIPELINE_DATASET_PATH):
+        os.makedirs(config.PIPELINE_DATASET_PATH)
 
     if ".npz" in filepath:
-        save_npz(filepath, results)
+        save_npz(filepath, results["full_article"])
+    elif ".json" in filepath:
+        pd.DataFrame(results).to_json(filepath)
     else:
         raise ValueError(f"File extension of {filepath} is not supported for saving.")
 
@@ -164,18 +167,20 @@ def tfidf_vectorizer(corpus, parallel_mode=False):
     return config.vectorizer.fit_transform(corpus)
 
 
-def load_preprocessing(model):
+def load_preprocessing(model_file):
     """
     Load the preprocessing results from a file.
 
     :param model: The model to load the preprocessing results for.
     :return: The results from the file.
     """
-    assert model is not None, "Model (filepath) is not provided."
-    filepath = config.PIPELINE_DATASET_PATH.format(model)
+    assert model_file is not None, "Model (filepath) is not provided."
+    filepath = os.path.join(config.PIPELINE_DATASET_PATH, model_file)
     if not os.path.exists(filepath):
         raise FileNotFoundError(f"The file {filepath} does not exist.")
     if ".npz" in filepath:
         return load_npz(filepath)
+    if ".json" in filepath:
+        return pd.read_json(filepath)
     else:
         raise ValueError(f"The given path {filepath} is not a valid path.")

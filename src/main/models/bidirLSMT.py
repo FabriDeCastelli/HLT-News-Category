@@ -1,4 +1,4 @@
-""" Multinomial Logistic Regression. """
+""" Bidirectional LSTM. """
 from src.main.models.model import Model
 from src.main.pipeline.pipeline import Pipeline
 from config.config import PIPELINE_DATASET_PATH, MODELS_PATH
@@ -13,34 +13,51 @@ from scipy.sparse import load_npz
 import numpy as np
 import joblib
 
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import RandomizedSearchCV
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, Bidirectional, LSTM, Dense
+
 from sklearn.metrics import get_scorer, f1_score, precision_score, recall_score, accuracy_score, confusion_matrix
 
 
-class Logistic(Model):
+class BidirectionalLSTM(Model):
     """
-    Multinomial Logistic Regression class.
+    Bidirectional LSTM class.
     """
 
     def __init__(self, **kwargs):
         """
-        Constructor for the Multinomial Logistic Regression class.
-        Instantiates the Logistic Regression model by creating a sklearn LogisticRegression object, see the sklearn
-        documentation at
-        https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html
+        Constructor for the Bidirectional LSTM class.
 
-        :param kwargs: the arguments that are going to be passed to the Logistic Regression model.
+        :param kwargs: the arguments that are going to be passed to the Bidirectional LSTM model.
         """
         super().__init__()
-        self.logistic = LogisticRegression(**kwargs)
+
+        # Get the parameters from the kwargs
+        vocab_size = kwargs.get("vocab_size", 10000)
+        embedding_dim = kwargs.get("embedding_dim", 100)
+        max_sequence_length = kwargs.get("max_sequence_length", 100)
+        lstm_units = kwargs.get("lstm_units", 128)
+
+        # Define the model architecture
+        bidirLSTM = Sequential()
+        # Add an embedding layer to convert input sequences to dense vectors
+        bidirLSTM.add(Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=max_sequence_length))
+        # Add a Bidirectional LSTM layer
+        bidirLSTM.add(Bidirectional(LSTM(units=lstm_units, return_sequences=True)))
+        # Add a dense output layer
+        bidirLSTM.add(Dense(units=5, activation='softmax'))
+        # Compile the model
+        bidirLSTM.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+        self.bidirLSTM = bidirLSTM
         self.pipeline = None
 
     def set_model(self, model):
         """
-        Set the model to the Logistic Regression model.
+        Set the Bidirectional LSTM.
         """
-        self.logistic = model
+        self.bidirLSTM = model
 
     def set_pipeline(self, pipeline: List[Callable]):
         """
@@ -62,10 +79,10 @@ class Logistic(Model):
         assert self.pipeline is not None, "Pipeline is not set."
         assert isinstance(data, pd.DataFrame), "Data is not a pandas DataFrame."
 
-        path = os.path.join(PIPELINE_DATASET_PATH, repr(self)+".npz")
+        path = os.path.join(PIPELINE_DATASET_PATH, repr(self)+".json")
         if os.path.exists(path):
-            return load_npz(path)
-        return self.pipeline.execute(data, model_file=repr(self)+".npz", save=save)
+            return pd.read_json(path)
+        return self.pipeline.execute(data, model_file=repr(self)+".json", save=save)
 
     def fit(self, inputs, targets, sample_weight=None):
         """
@@ -75,10 +92,10 @@ class Logistic(Model):
         :param targets: the target values
         :param sample_weight: the weights of the samples
         """
-        if os.path.isfile(os.path.join(MODELS_PATH, 'logistic.pkl')):
+        if os.path.isfile(os.path.join(MODELS_PATH, 'bidirLSTM.pkl')):
             self.upload_model()
         else:
-            self.logistic = self.logistic.fit(inputs, targets, sample_weight)
+            self.bidirLSTM = self.bidirLSTM.fit(inputs, targets, sample_weight)
 
 
     def grid_search(self, x_train, y_train, n_iter=30):
@@ -91,34 +108,7 @@ class Logistic(Model):
         :return: the cross validation results
         """
 
-        # Parameter grid for Logistic Regressor
-        params = {
-            "penalty": ["l2"],
-            "C": [0.05, 0.1, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6],
-            "solver": ["lbfgs", "sag", "saga"],
-            "class_weight": ["balanced", None]
-        }
-
-        scoring = {
-            'accuracy': get_scorer("accuracy"),
-            'f1-macro': get_scorer("macro"),
-            'precision': get_scorer("precision_macro"),
-            'recall': get_scorer("recall_macro")
-        }
-
-        # Randomized Search
-        rscv = RandomizedSearchCV(
-            estimator=self.logistic,
-            param_distributions=params,
-            refit="f1_macro",
-            n_jobs=-1,
-            n_iter=n_iter,
-            random_state=42,
-            verbose=True
-        )
-        result = rscv.fit(x_train, y_train)
-        self.logistic = result.best_estimator_
-        return result
+        # TODO
 
 
     def evaluate(self, inputs, targets):
@@ -129,7 +119,7 @@ class Logistic(Model):
         :param targets: the target values
         :return: the score of the model
         """
-        return self.logistic.score(inputs, targets)
+        return self.bidirLSTM.evaluate(inputs, targets)
     
     def predict(self, data):
         """
@@ -138,7 +128,7 @@ class Logistic(Model):
         :param data: the data to predict
         :return: the predicted values
         """
-        return self.logistic.predict(data)
+        return self.bidirLSTM.predict(data)
 
     def plot_confusion_matrix(self, y_test, y_pred):
         """
@@ -172,9 +162,9 @@ class Logistic(Model):
         """
         res = {}
         res["Accuracy"] = accuracy_score(y_test, y_pred)
-        res["F1 (Macro)"] = f1_score(y_test, y_pred, average='macro')
-        res["Precision (Macro)"] = precision_score(y_test, y_pred, average='macro')
-        res["Recall (Macro)"] = recall_score(y_test, y_pred, average='macro')
+        res["f1-macro"] = f1_score(y_test, y_pred, average='macro')
+        res["Precision"] = precision_score(y_test, y_pred, average='macro')
+        res["Recall"] = recall_score(y_test, y_pred, average='macro')
 
         return res
 
@@ -224,7 +214,7 @@ class Logistic(Model):
         :param path: the path to save the model to
         """
 
-        joblib.dump(self.logistic, os.path.join(MODELS_PATH, 'logistic.pkl'))
+        joblib.dump(self.bidirLSTM, MODELS_PATH + 'bidirLSTM.pkl')
         return
 
     def upload_model(self):
@@ -233,10 +223,10 @@ class Logistic(Model):
 
         :param path: the path to load the model from
         """
-        self.logistic = joblib.load(os.path.join(MODELS_PATH, 'logistic.pkl'))
+        self.bidirLSTM = joblib.load(MODELS_PATH + 'bidirLSTM.pkl')
         return
 
 
     def __repr__(self):
-        return "Logistic"
+        return "bidirLSTM"
 

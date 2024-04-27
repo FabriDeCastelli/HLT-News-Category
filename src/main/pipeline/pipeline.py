@@ -34,7 +34,7 @@ class Pipeline:
     def switch_parallel_execution_mode(self):
         self.parallel_execution_mode = not self.parallel_execution_mode
 
-    def execute(self, data: pd.DataFrame, model=None, save=False):
+    def execute(self, data: pd.DataFrame, model_file=None, save=False):
         """
         Run the pipeline in parallel.
         The pipeline is run in parallel by splitting the data into chunks and running
@@ -50,7 +50,7 @@ class Pipeline:
 
         assert len(self.stages) > 0, "Pipeline has no steps."
         assert isinstance(data, pd.DataFrame), "Data is not a pandas DataFrame."
-        assert not save or model is not None, "Model is not provided."
+        assert not save or model_file is not None, "Model is not provided."
 
         def run_chunk(functions_chunk, data_chunk):
             """
@@ -104,11 +104,11 @@ class Pipeline:
 
         print(f"Pipeline execution time: {datetime.now() - now}")
 
-        if save and model is not None:
-            utils.save_preprocessing(results, model)
+        if save and model_file is not None:
+            utils.save_preprocessing(results, model_file)
 
-        if os.path.exists(PIPELINE_DATASET_PATH.format(model)):
-            return utils.load_preprocessing(model)
+        if os.path.exists(os.path.join(PIPELINE_DATASET_PATH, model_file)):
+            return utils.load_preprocessing(model_file)
 
         results = map(results, lambda x: [x] if not isinstance(x, list) else x)
         return pd.DataFrame(results)
