@@ -80,7 +80,6 @@ class Logistic(Model):
         else:
             self.logistic = self.logistic.fit(inputs, targets, sample_weight)
 
-
     def grid_search(self, x_train, y_train, n_iter=30):
         """
         Cross validate the model.
@@ -94,7 +93,7 @@ class Logistic(Model):
         # Parameter grid for Logistic Regressor
         params = {
             "penalty": ["l2"],
-            "C": [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 1.5],
+            "C": [0.05, 0.1, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6],
             "solver": ["lbfgs", "sag", "saga"],
             "class_weight": ["balanced", None]
         }
@@ -113,10 +112,12 @@ class Logistic(Model):
             refit="f1-micro",
             n_jobs=-1,
             n_iter=n_iter,
-            random_state=42
+            random_state=42,
+            verbose=True
         )
-        return rscv.fit(x_train, y_train)
-
+        result = rscv.fit(x_train, y_train)
+        self.logistic = result.best_estimator_
+        return result
 
     def evaluate(self, inputs, targets):
         """
@@ -127,7 +128,7 @@ class Logistic(Model):
         :return: the score of the model
         """
         return self.logistic.score(inputs, targets)
-    
+
     def predict(self, data):
         """
         Make prediction over data.
@@ -233,7 +234,5 @@ class Logistic(Model):
         self.logistic = joblib.load(MODELS_PATH + 'logistic.pkl')
         return
 
-
     def __repr__(self):
         return "Logistic"
-
