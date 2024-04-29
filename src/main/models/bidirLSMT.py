@@ -15,9 +15,9 @@ import joblib
 
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Embedding, Bidirectional, LSTM, Dense
+from tensorflow.keras.layers import Input, Embedding, Bidirectional, LSTM, Dense
 
-from sklearn.metrics import get_scorer, f1_score, precision_score, recall_score, accuracy_score, confusion_matrix
+from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score, confusion_matrix
 
 
 class BidirectionalLSTM(Model):
@@ -41,10 +41,13 @@ class BidirectionalLSTM(Model):
 
         # Define the model architecture
         bidirLSTM = Sequential()
+        # Add an input layer
+        bidirLSTM.add(Input(shape=(None,), dtype="int32"))
         # Add an embedding layer to convert input sequences to dense vectors
         bidirLSTM.add(Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=max_sequence_length))
         # Add a Bidirectional LSTM layer
         bidirLSTM.add(Bidirectional(LSTM(units=lstm_units, return_sequences=True)))
+        bidirLSTM.add(Bidirectional(LSTM(units=lstm_units)))
         # Add a dense output layer
         bidirLSTM.add(Dense(units=5, activation='softmax'))
         # Compile the model
@@ -222,6 +225,11 @@ class BidirectionalLSTM(Model):
         self.bidirLSTM = joblib.load(MODELS_PATH + 'bidirLSTM.pkl')
         return
 
+    def summary(self):
+        """
+        Print the summary of the model.
+        """
+        print(self.bidirLSTM.summary())
 
     def __repr__(self):
         return "bidirLSTM"
