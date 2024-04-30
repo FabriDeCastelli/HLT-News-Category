@@ -43,7 +43,7 @@ class Pipeline:
         The results are flattened and returned.
 
         :param data: The data to run the pipeline.
-        :param model: A string representing the caller model.
+        :param model_file: A string representing the caller model.
         :param save: A boolean indicating whether to save the data to a file.
         :return: The data after the processing.
         """
@@ -82,9 +82,9 @@ class Pipeline:
             )
 
         # Load the preprocessing result if it already exists
-        if os.path.exists(os.path.join(PIPELINE_DATASET_PATH, model_file)):
+        if model_file is not None and os.path.exists(model_file):
             return utils.load_preprocessing(model_file)
-        
+
         cpu_count = os.cpu_count()
         results = {}
 
@@ -94,7 +94,11 @@ class Pipeline:
 
             for function_chunk in self.stages:
                 if self.parallel_execution_mode:
-                    chunks = [data[column][i::cpu_count] for i in range(cpu_count)]
+                    chunk_size = len(data[column]) // cpu_count
+                    chunks = [
+                        data[column][i : i + chunk_size]
+                        for i in range(0, len(data[column]), chunk_size)
+                    ]
                     results[column] = Parallel(n_jobs=cpu_count)(
                         delayed(run_chunk)(function_chunk, chunk) for chunk in chunks
                     )
@@ -111,5 +115,4 @@ class Pipeline:
         if save and model_file is not None:
             utils.save_preprocessing(results, model_file)
 
-        #results = map(results, lambda x: [x] if not isinstance(x, list) else x)
         return results["full_article"]

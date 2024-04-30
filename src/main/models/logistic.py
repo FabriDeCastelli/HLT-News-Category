@@ -1,4 +1,5 @@
 """ Multinomial Logistic Regression. """
+
 from src.main.models.model import Model
 from src.main.pipeline.pipeline import Pipeline
 from config.config import PIPELINE_DATASET_PATH, MODELS_PATH
@@ -15,7 +16,14 @@ import joblib
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import RandomizedSearchCV
-from sklearn.metrics import get_scorer, f1_score, precision_score, recall_score, accuracy_score, confusion_matrix
+from sklearn.metrics import (
+    get_scorer,
+    f1_score,
+    precision_score,
+    recall_score,
+    accuracy_score,
+    confusion_matrix,
+)
 
 
 class Logistic(Model):
@@ -61,7 +69,7 @@ class Logistic(Model):
         """
         assert self.pipeline is not None, "Pipeline is not set."
         assert isinstance(data, pd.DataFrame), "Data is not a pandas DataFrame."
-        return self.pipeline.execute(data, model_file=repr(self)+".npz", save=save)
+        return self.pipeline.execute(data, model_file=repr(self) + ".npz", save=save)
 
     def fit(self, inputs, targets, sample_weight=None):
         """
@@ -71,11 +79,10 @@ class Logistic(Model):
         :param targets: the target values
         :param sample_weight: the weights of the samples
         """
-        if os.path.isfile(os.path.join(MODELS_PATH, 'logistic.pkl')):
+        if os.path.isfile(os.path.join(MODELS_PATH, repr(self) + ".pkl")):
             self.upload_model()
         else:
             self.logistic = self.logistic.fit(inputs, targets, sample_weight)
-
 
     def grid_search(self, x_train, y_train, n_iter=30):
         """
@@ -92,14 +99,14 @@ class Logistic(Model):
             "penalty": ["l2"],
             "C": [0.05, 0.1, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6],
             "solver": ["lbfgs", "sag", "saga"],
-            "class_weight": ["balanced", None]
+            "class_weight": ["balanced", None],
         }
 
         scoring = {
-            'accuracy': get_scorer("accuracy"),
-            'f1-macro': get_scorer("macro"),
-            'precision': get_scorer("precision_macro"),
-            'recall': get_scorer("recall_macro")
+            "accuracy": get_scorer("accuracy"),
+            "f1-macro": get_scorer("macro"),
+            "precision": get_scorer("precision_macro"),
+            "recall": get_scorer("recall_macro"),
         }
 
         # Randomized Search
@@ -110,12 +117,11 @@ class Logistic(Model):
             n_jobs=-1,
             n_iter=n_iter,
             random_state=42,
-            verbose=True
+            verbose=True,
         )
         result = rscv.fit(x_train, y_train)
         self.logistic = result.best_estimator_
         return result
-
 
     def evaluate(self, inputs, targets):
         """
@@ -126,7 +132,7 @@ class Logistic(Model):
         :return: the score of the model
         """
         return self.logistic.score(inputs, targets)
-    
+
     def predict(self, data):
         """
         Make prediction over data.
@@ -146,15 +152,22 @@ class Logistic(Model):
         cm = confusion_matrix(y_test, y_pred)
 
         # Category names in order
-        categories = ['Entertainment', 'Life', 'Politics', 'Sport', 'Voices']
+        categories = ["Entertainment", "Life", "Politics", "Sport", "Voices"]
 
         # confusion matrix plot
         plt.figure(figsize=(8, 6))
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False,
-                    xticklabels=categories, yticklabels=categories)
-        plt.xlabel('Predicted labels')
-        plt.ylabel('True labels')
-        plt.title('Confusion Matrix')
+        sns.heatmap(
+            cm,
+            annot=True,
+            fmt="d",
+            cmap="Blues",
+            cbar=False,
+            xticklabels=categories,
+            yticklabels=categories,
+        )
+        plt.xlabel("Predicted labels")
+        plt.ylabel("True labels")
+        plt.title("Confusion Matrix")
         plt.show()
         return
 
@@ -168,9 +181,9 @@ class Logistic(Model):
         """
         res = {}
         res["Accuracy"] = accuracy_score(y_test, y_pred)
-        res["F1 (Macro)"] = f1_score(y_test, y_pred, average='macro')
-        res["Precision (Macro)"] = precision_score(y_test, y_pred, average='macro')
-        res["Recall (Macro)"] = recall_score(y_test, y_pred, average='macro')
+        res["F1 (Macro)"] = f1_score(y_test, y_pred, average="macro")
+        res["Precision (Macro)"] = precision_score(y_test, y_pred, average="macro")
+        res["Recall (Macro)"] = recall_score(y_test, y_pred, average="macro")
 
         return res
 
@@ -199,12 +212,12 @@ class Logistic(Model):
         sns.set(style="whitegrid")
         plt.figure(figsize=(10, 6))
         ax = sns.barplot(x=metric_names, y=performances, palette="viridis")
-        ax.set_ylabel('Performance')
-        ax.set_xlabel('Metric Name')
-        ax.set_title('Model Performances on Different Metrics')
+        ax.set_ylabel("Performance")
+        ax.set_xlabel("Metric Name")
+        ax.set_title("Model Performances on Different Metrics")
 
         # Rotate x-axis labels for better readability (optional)
-        plt.xticks(rotation=45, ha='right')
+        plt.xticks(rotation=45, ha="right")
 
         # Set y-axis ticks from 0 to 1.0 with increments of 0.05
         plt.yticks(np.arange(0, 1.05, 0.1))
@@ -216,23 +229,16 @@ class Logistic(Model):
     def save_model(self):
         """
         Save the model to a file.
-
-        :param path: the path to save the model to
         """
-
-        joblib.dump(self.logistic, os.path.join(MODELS_PATH, 'logistic.pkl'))
+        joblib.dump(self.logistic, os.path.join(MODELS_PATH, repr(self) + ".pkl"))
         return
 
     def upload_model(self):
         """
         Load the model from a file.
-
-        :param path: the path to load the model from
         """
-        self.logistic = joblib.load(os.path.join(MODELS_PATH, 'logistic.pkl'))
+        self.logistic = joblib.load(os.path.join(MODELS_PATH, repr(self) + ".pkl"))
         return
-
 
     def __repr__(self):
         return "Logistic"
-

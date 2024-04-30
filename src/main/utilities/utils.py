@@ -18,13 +18,13 @@ def save_preprocessing(results, model_file):
     Save the preprocessing results to a file.
 
     :param results: The results to save.
-    :param model: The model to save the results for.
+    :param model_file: The model to save the results for.
     """
     assert model_file is not None, "Model (filepath) is not provided."
     assert isinstance(results, dict), "Results is not a dictionary."
 
     filepath = os.path.join(config.PIPELINE_DATASET_PATH, model_file)
-    
+
     if not os.path.exists(config.PIPELINE_DATASET_PATH):
         os.makedirs(config.PIPELINE_DATASET_PATH)
 
@@ -119,7 +119,7 @@ def stop_words_removal(corpus, parallel_mode=True) -> str:
     :param parallel_mode: A boolean indicating whether to run the function in parallel.
     :return: The text with the stop words removed, as a string.
     """
-    stop_words = set(nltk.corpus.stopwords.words("english"))
+    stop_words = config.stop_words
     if isinstance(corpus, bytes):
         corpus = corpus.decode("utf-8")
     words = corpus.split(" ")
@@ -171,7 +171,7 @@ def load_preprocessing(model_file):
     """
     Load the preprocessing results from a file.
 
-    :param model: The model to load the preprocessing results for.
+    :param model_file: the file path that includes the model name.
     :return: The results from the file.
     """
     assert model_file is not None, "Model (filepath) is not provided."

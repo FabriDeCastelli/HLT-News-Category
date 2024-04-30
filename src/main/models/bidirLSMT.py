@@ -1,7 +1,8 @@
 """ Bidirectional LSTM. """
+
 from src.main.models.model import Model
 from src.main.pipeline.pipeline import Pipeline
-from config.config import PIPELINE_DATASET_PATH, MODELS_PATH
+from config.config import MODELS_PATH
 
 import os
 from typing import Callable, List
@@ -9,15 +10,19 @@ from typing import Callable, List
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy.sparse import load_npz
 import numpy as np
 import joblib
 
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Input, Embedding, Bidirectional, LSTM, Dense
+from keras.models import Sequential
+from keras.layers import Input, Embedding, Bidirectional, LSTM, Dense
 
-from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score, confusion_matrix
+from sklearn.metrics import (
+    f1_score,
+    precision_score,
+    recall_score,
+    accuracy_score,
+    confusion_matrix,
+)
 
 
 class BidirectionalLSTM(Model):
@@ -44,14 +49,22 @@ class BidirectionalLSTM(Model):
         # Add an input layer
         bidirLSTM.add(Input(shape=(None,), dtype="int32"))
         # Add an embedding layer to convert input sequences to dense vectors
-        bidirLSTM.add(Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=max_sequence_length))
+        bidirLSTM.add(
+            Embedding(
+                input_dim=vocab_size,
+                output_dim=embedding_dim,
+                input_length=max_sequence_length,
+            )
+        )
         # Add a Bidirectional LSTM layer
         bidirLSTM.add(Bidirectional(LSTM(units=lstm_units, return_sequences=True)))
         bidirLSTM.add(Bidirectional(LSTM(units=lstm_units)))
         # Add a dense output layer
-        bidirLSTM.add(Dense(units=5, activation='softmax'))
+        bidirLSTM.add(Dense(units=5, activation="softmax"))
         # Compile the model
-        bidirLSTM.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+        bidirLSTM.compile(
+            loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"]
+        )
 
         self.bidirLSTM = bidirLSTM
         self.pipeline = None
@@ -81,7 +94,7 @@ class BidirectionalLSTM(Model):
         """
         assert self.pipeline is not None, "Pipeline is not set."
         assert isinstance(data, pd.DataFrame), "Data is not a pandas DataFrame."
-        return self.pipeline.execute(data, model_file=repr(self)+".json", save=save)
+        return self.pipeline.execute(data, model_file=repr(self) + ".json", save=save)
 
     def fit(self, inputs, targets, sample_weight=None):
         """
@@ -91,11 +104,12 @@ class BidirectionalLSTM(Model):
         :param targets: the target values
         :param sample_weight: the weights of the samples
         """
-        if os.path.isfile(os.path.join(MODELS_PATH, 'bidirLSTM.pkl')):
+        if os.path.isfile(os.path.join(MODELS_PATH, repr(self) + ".pkl")):
             self.upload_model()
         else:
-            self.bidirLSTM = self.bidirLSTM.fit(inputs, targets, sample_weight)
-
+            self.bidirLSTM = self.bidirLSTM.fit(
+                inputs, targets, sample_weight, verbose=0
+            )
 
     def grid_search(self, x_train, y_train, n_iter=30):
         """
@@ -109,7 +123,6 @@ class BidirectionalLSTM(Model):
 
         # TODO
 
-
     def evaluate(self, inputs, targets):
         """
         Evaluate the model.
@@ -119,7 +132,7 @@ class BidirectionalLSTM(Model):
         :return: the score of the model
         """
         return self.bidirLSTM.evaluate(inputs, targets)
-    
+
     def predict(self, data):
         """
         Make prediction over data.
@@ -139,15 +152,22 @@ class BidirectionalLSTM(Model):
         cm = confusion_matrix(y_test, y_pred)
 
         # Category names in order
-        categories = ['Entertainment', 'Life', 'Politics', 'Sport', 'Voices']
+        categories = ["Entertainment", "Life", "Politics", "Sport", "Voices"]
 
         # confusion matrix plot
         plt.figure(figsize=(8, 6))
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False,
-                    xticklabels=categories, yticklabels=categories)
-        plt.xlabel('Predicted labels')
-        plt.ylabel('True labels')
-        plt.title('Confusion Matrix')
+        sns.heatmap(
+            cm,
+            annot=True,
+            fmt="d",
+            cmap="Blues",
+            cbar=False,
+            xticklabels=categories,
+            yticklabels=categories,
+        )
+        plt.xlabel("Predicted labels")
+        plt.ylabel("True labels")
+        plt.title("Confusion Matrix")
         plt.show()
         return
 
@@ -161,9 +181,9 @@ class BidirectionalLSTM(Model):
         """
         res = {}
         res["Accuracy"] = accuracy_score(y_test, y_pred)
-        res["f1-macro"] = f1_score(y_test, y_pred, average='macro')
-        res["Precision"] = precision_score(y_test, y_pred, average='macro')
-        res["Recall"] = recall_score(y_test, y_pred, average='macro')
+        res["f1-macro"] = f1_score(y_test, y_pred, average="macro")
+        res["Precision"] = precision_score(y_test, y_pred, average="macro")
+        res["Recall"] = recall_score(y_test, y_pred, average="macro")
 
         return res
 
@@ -192,12 +212,12 @@ class BidirectionalLSTM(Model):
         sns.set(style="whitegrid")
         plt.figure(figsize=(10, 6))
         ax = sns.barplot(x=metric_names, y=performances, palette="viridis")
-        ax.set_ylabel('Performance')
-        ax.set_xlabel('Metric Name')
-        ax.set_title('Model Performances on Different Metrics')
+        ax.set_ylabel("Performance")
+        ax.set_xlabel("Metric Name")
+        ax.set_title("Model Performances on Different Metrics")
 
         # Rotate x-axis labels for better readability (optional)
-        plt.xticks(rotation=45, ha='right')
+        plt.xticks(rotation=45, ha="right")
 
         # Set y-axis ticks from 0 to 1.0 with increments of 0.05
         plt.yticks(np.arange(0, 1.05, 0.1))
@@ -213,16 +233,14 @@ class BidirectionalLSTM(Model):
         :param path: the path to save the model to
         """
 
-        joblib.dump(self.bidirLSTM, MODELS_PATH + 'bidirLSTM.pkl')
+        joblib.dump(self.bidirLSTM, MODELS_PATH + "bidirLSTM.pkl")
         return
 
     def upload_model(self):
         """
         Load the model from a file.
-
-        :param path: the path to load the model from
         """
-        self.bidirLSTM = joblib.load(MODELS_PATH + 'bidirLSTM.pkl')
+        self.bidirLSTM = joblib.load(MODELS_PATH + "bidirLSTM.pkl")
         return
 
     def summary(self):
@@ -233,4 +251,3 @@ class BidirectionalLSTM(Model):
 
     def __repr__(self):
         return "bidirLSTM"
-
