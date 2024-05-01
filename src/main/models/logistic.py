@@ -1,5 +1,7 @@
 """ Multinomial Logistic Regression. """
 
+from abc import ABC
+
 from src.main.models.model import Model
 from src.main.pipeline.pipeline import Pipeline
 from config.config import PIPELINE_DATASET_PATH, MODELS_PATH
@@ -8,21 +10,12 @@ import os
 from typing import Callable, List
 
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from scipy.sparse import load_npz
-import numpy as np
 import joblib
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import (
     get_scorer,
-    f1_score,
-    precision_score,
-    recall_score,
-    accuracy_score,
-    confusion_matrix,
 )
 
 
@@ -31,7 +24,7 @@ class Logistic(Model):
     Multinomial Logistic Regression class.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, model=None, **kwargs):
         """
         Constructor for the Multinomial Logistic Regression class.
         Instantiates the Logistic Regression model by creating a sklearn LogisticRegression object, see the sklearn
@@ -40,24 +33,37 @@ class Logistic(Model):
 
         :param kwargs: the arguments that are going to be passed to the Logistic Regression model.
         """
-        super().__init__()
-        self.logistic = LogisticRegression(**kwargs)
-        self.pipeline = None
+        if model is not None:
+            self._logistic = model
+        else:
+            self._logistic = LogisticRegression(**kwargs)
+        self._pipeline = None
 
-    def set_model(self, model):
-        """
-        Set the model to the Logistic Regression model.
-        """
-        self.logistic = model
+    @property
+    def logistic(self):
+        return self._logistic
 
-    def set_pipeline(self, pipeline: List[Callable]):
+    @logistic.setter
+    def logistic(self, model):
+        if not isinstance(model, LogisticRegression):
+            raise ValueError(
+                "The model should be an instance of sklearn.linear_model.LogisticRegression"
+            )
+        self._logistic = model
+
+    @property
+    def pipeline(self):
+        return self._pipeline
+
+    @pipeline.setter
+    def pipeline(self, pipeline: List[Callable]):
         """
         Set the pipeline for the model.
 
         :param pipeline: an array of functions that are going to be executed in the pipeline.
         :return:
         """
-        self.pipeline = Pipeline(pipeline)
+        self._pipeline = Pipeline(pipeline)
 
     def run_pipeline(self, data: pd.DataFrame, save=True):
         """
@@ -67,8 +73,7 @@ class Logistic(Model):
         :param save: a boolean indicating whether to save the data to a file.
         :return: the data after the processing.
         """
-        assert self.pipeline is not None, "Pipeline is not set."
-        assert isinstance(data, pd.DataFrame), "Data is not a pandas DataFrame."
+        assert self.pipeline is not None, "Cannot run the pipeline: it is not set."
         return self.pipeline.execute(data, model_file=repr(self) + ".npz", save=save)
 
     def fit(self, inputs, targets, sample_weight=None):
@@ -80,7 +85,7 @@ class Logistic(Model):
         :param sample_weight: the weights of the samples
         """
         if os.path.isfile(os.path.join(MODELS_PATH, repr(self) + ".pkl")):
-            self.upload_model()
+            self.load_model()
         else:
             self.logistic = self.logistic.fit(inputs, targets, sample_weight)
 
@@ -142,103 +147,24 @@ class Logistic(Model):
         """
         return self.logistic.predict(data)
 
-    def plot_confusion_matrix(self, y_test, y_pred):
-        """
-        plot the confusion matrix.
-
-        :param y_test: real target values
-        :param y_pred: the predicted values
-        """
-        cm = confusion_matrix(y_test, y_pred)
-
-        # Category names in order
-        categories = ["Entertainment", "Life", "Politics", "Sport", "Voices"]
-
-        # confusion matrix plot
-        plt.figure(figsize=(8, 6))
-        sns.heatmap(
-            cm,
-            annot=True,
-            fmt="d",
-            cmap="Blues",
-            cbar=False,
-            xticklabels=categories,
-            yticklabels=categories,
-        )
-        plt.xlabel("Predicted labels")
-        plt.ylabel("True labels")
-        plt.title("Confusion Matrix")
-        plt.show()
-        return
-
-    def compute_performance(self, y_test, y_pred):
-        """
-        Compute the performance of the model.
-
-        :param y_test: real target values
-        :param y_pred: predicted values
-        :return: dictionary with performance matrics
-        """
-        res = {}
-        res["Accuracy"] = accuracy_score(y_test, y_pred)
-        res["F1 (Macro)"] = f1_score(y_test, y_pred, average="macro")
-        res["Precision (Macro)"] = precision_score(y_test, y_pred, average="macro")
-        res["Recall (Macro)"] = recall_score(y_test, y_pred, average="macro")
-
-        return res
-
-    def print_performance(self, results):
-        """
-        Plot the performance of the model.
-
-        :param results: the results of the model
-        """
-        # Plot the performance
-        for key, value in results.items():
-            print(key, ": ", value)
-        return
-
-    def plot_performance(self, results):
-        """
-        Plot the performance of the model.
-
-        :param results: the results of the model
-        """
-        # Plot the performance
-        # Assuming you already have metric_names and performances defined
-        metric_names = list(results.keys())
-        performances = list(results.values())
-        # Create a bar plot using seaborn
-        sns.set(style="whitegrid")
-        plt.figure(figsize=(10, 6))
-        ax = sns.barplot(x=metric_names, y=performances, palette="viridis")
-        ax.set_ylabel("Performance")
-        ax.set_xlabel("Metric Name")
-        ax.set_title("Model Performances on Different Metrics")
-
-        # Rotate x-axis labels for better readability (optional)
-        plt.xticks(rotation=45, ha="right")
-
-        # Set y-axis ticks from 0 to 1.0 with increments of 0.05
-        plt.yticks(np.arange(0, 1.05, 0.1))
-
-        # Show the plot
-        plt.show()
-        return
-
     def save_model(self):
         """
         Save the model to a file.
         """
-        joblib.dump(self.logistic, os.path.join(MODELS_PATH, repr(self) + ".pkl"))
-        return
+        path = os.path.join(MODELS_PATH, repr(self) + ".pkl")
+        os.mkdir(path)
+        joblib.dump(self.logistic, path)
 
-    def upload_model(self):
+    @classmethod
+    def load_model(cls):
         """
         Load the model from a file.
         """
-        self.logistic = joblib.load(os.path.join(MODELS_PATH, repr(self) + ".pkl"))
-        return
+        path = os.path.join(MODELS_PATH, repr(cls) + ".pkl")
+        assert os.path.isfile(
+            path
+        ), f"Error: trying to load {repr(cls)} model at unknown path {path}"
+        return cls(model=joblib.load(path))
 
     def __repr__(self):
-        return "Logistic"
+        return self.__class__.__name__

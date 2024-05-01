@@ -20,6 +20,8 @@ MODELS_PATH = os.path.join(PROJECT_FOLDER_PATH, "models")
 
 PIPELINE_DATASET_PATH = os.path.join(PROJECT_FOLDER_PATH, "dataset", "preprocessing")
 
+TENSORBOARD_LOGS = os.path.join(PROJECT_FOLDER_PATH, "logs", "{}")
+
 # RENAME CATEGORIES
 life = ["WELLNESS", "TRAVEL", "STYLE & BEAUTY", "FOOD & DRINK"]
 entertainment = ["ENTERTAINMENT", "COMEDY"]
@@ -34,8 +36,5 @@ rename_y = {"Entertainment": 0, "Life": 1, "Politics": 2, "Sport": 3, "Voices": 
 nltk.download("stopwords")
 nlp = spacy.load("en_core_web_sm")
 stemmer = nltk.SnowballStemmer("english")
-vectorizer = TfidfVectorizer(
-    # tokenizer=word_tokenize,
-    # stop_words="english",
-)
+vectorizer = TfidfVectorizer()
 stop_words = set(nltk.corpus.stopwords.words("english"))

@@ -19,17 +19,30 @@ class Pipeline:
     Pipeline class. Contains a list of steps to be executed in parallel on a dataset.
     """
 
-    stages: List[Callable] = []
+    @staticmethod
+    def is_parallelizable(f):
+        return inspect.signature(f).parameters.get("parallel_mode").default
 
-    def __init__(self, stages=None):
-        if stages is None or stages == []:
-            stages = []
+    def __init__(self, stages: List[Callable] = None):
+        assert isinstance(stages, List), "The pipeline should be a list of stages."
+        assert all(
+            isinstance(stage, Callable) for stage in stages
+        ), "Pipeline error: found a non callable item"
 
-        def is_parallelizable(f):
-            return inspect.signature(f).parameters.get("parallel_mode").default
+        self.parallel_execution_mode = (
+            Pipeline.is_parallelizable(stages[0]) if stages else False
+        )
+        self.stages = stages
 
-        self.parallel_execution_mode = is_parallelizable(stages[0]) if stages else False
-        self.stages = [list(group) for _, group in groupby(stages, is_parallelizable)]
+    @property
+    def stages(self):
+        return self._stages
+
+    @stages.setter
+    def stages(self, stages):
+        self._stages = [
+            list(group) for _, group in groupby(stages, Pipeline.is_parallelizable)
+        ]
 
     def switch_parallel_execution_mode(self):
         self.parallel_execution_mode = not self.parallel_execution_mode

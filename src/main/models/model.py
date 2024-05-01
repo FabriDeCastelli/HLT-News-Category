@@ -1,32 +1,49 @@
-""" Model interface. """
+""" Model Abstract Class. """
 
-from src.main.pipeline.pipeline import Pipeline
+from typing import Callable, List
+
+import pandas as pd
+
+from abc import ABC, abstractmethod
 
 
-class Model:
+class Model(ABC):
     """
-    Interface for models.
+    Abstract Class for models.
     """
 
-    pipeline: Pipeline = None
-
-    def __init__(self):
-        pass
-
-    def set_pipeline(self, pipeline):
+    @property
+    @abstractmethod
+    def pipeline(self):
         """
-        Set the pipeline for the model.
+        Getter of the pipeline of the model.
         """
         raise NotImplementedError()
 
+    @pipeline.setter
+    @abstractmethod
+    def pipeline(self, pipeline: List[Callable]):
+        """
+        Setter of the pipeline.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
     def run_pipeline(self, data):
         """
         Run the pipeline on the data.
 
         :param data: The data to run the pipeline on.
         """
+        assert isinstance(data, pd.DataFrame), "Data is not a pandas DataFrame."
+
+    def summary(self):
+        """
+        Print a summary of the model.
+        """
         raise NotImplementedError()
 
+    @abstractmethod
     def fit(self, inputs, targets):
         """
         Fit the model to the data.
@@ -36,6 +53,7 @@ class Model:
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def predict(self, inputs):
         """
         Predict the target variable for the input data.
@@ -43,3 +61,20 @@ class Model:
         :param inputs: The input data.
         """
         raise NotImplementedError()
+
+    @abstractmethod
+    def save_model(self):
+        """
+        Save the model.
+        """
+
+    @classmethod
+    @abstractmethod
+    def load_model(cls):
+        """
+        Load the model.
+        """
+        raise NotImplementedError()
+
+    def __repr__(self):
+        return self.__class__.__name__
