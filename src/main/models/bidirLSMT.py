@@ -1,43 +1,63 @@
 """ Bidirectional LSTM. """
 
+from pyexpat import model
 import keras as K
 
+from keras_tuner import HyperModel
 from config import config
 from src.main.models.model import Model
 from src.main.pipeline.pipeline import Pipeline
+from config.config import HYPERPARAMETERS_PATH
+from src.main.utilities.utils import read_yaml
 from typing import Callable, List
+from keras import optimizers
+from keras import metrics
 
 import os
 import pandas as pd
 
 
-class BidirectionalLSTM(Model):
+class BidirectionalLSTM(Model, HyperModel):
     """
     Bidirectional LSTM class.
     """
 
-    def __init__(self, model: K.models.Sequential = None, **kwargs):
+    def __init__(self, model: K.models.Sequential = None):
         """
         Constructor for the Bidirectional LSTM class.
 
         :param model: the K.models.Sequential model, if provided in input **kwargs are ignored
-        :param kwargs: the arguments that are going to be passed to the Bidirectional LSTM model.
         """
         self._pipeline = None
         if model is not None:
             self._bidirLSTM = model
             return
 
+        self._bidirLSTM = None
+
+        self.hyperparameters = read_yaml(HYPERPARAMETERS_PATH.format("hyp_LSTM"))
+
+    def build(self, hp):
+
         # Get the parameters from the kwargs
-        vocab_size = kwargs.get("vocab_size", 10000)
-        embedding_dim = kwargs.get("embedding_dim", 100)
-        max_sequence_length = kwargs.get("max_sequence_length", 100)
-        lstm_units = kwargs.get("lstm_units", 128)
+        vocab_size = hp.Choice("vocab_size", self.hyperparameters["vocab_size"])
+        embedding_dim = hp.Choice(
+            "embedding_dim", self.hyperparameters["embedding_dim"]
+        )
+        max_sequence_length = hp.Choice(
+            "max_sequence_length", self.hyperparameters["max_sequence_length"]
+        )
+        lstm_units = hp.Choice("lstm_units", self.hyperparameters["lstm_units"])
+
+        # vocab_size = self.hyperparameters.get("vocab_size", 10000)
+        # embedding_dim = self.hyperparameters.get("embedding_dim", 100)
+        # max_sequence_length = self.hyperparameters.get("max_sequence_length", 100)
+        # lstm_units = self.hyperparameters.get("lstm_units", 128)
 
         # Define the model architecture
         bidirLSTM = K.models.Sequential()
         # Add an input layer
-        bidirLSTM.add(K.layers.Input(shape=(None,), dtype="int32"))
+        bidirLSTM.add(K.layers.InputLayer(shape=(None,)))
         # Add an embedding layer to convert input sequences to dense vectors
         bidirLSTM.add(
             K.layers.Embedding(
@@ -55,12 +75,19 @@ class BidirectionalLSTM(Model):
         bidirLSTM.add(K.layers.Bidirectional(K.layers.LSTM(units=lstm_units)))
         # Add a dense output layer
         bidirLSTM.add(K.layers.Dense(units=5, activation="softmax"))
+        # object optimizer
+        opt = optimizers.Adam(
+            learning_rate=hp.Choice(
+                "learning_rate", self.hyperparameters["learning_rate"]
+            )
+        )
         # Compile the model
         bidirLSTM.compile(
-            loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"]
+            loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"]
         )
 
-        self._bidirLSTM = bidirLSTM
+        self.bidirLSTM = bidirLSTM
+        return bidirLSTM
 
     @property
     def bidirLSTM(self):
@@ -100,7 +127,7 @@ class BidirectionalLSTM(Model):
         assert self.pipeline is not None, "Cannot run the pipeline: it is not set."
         return self.pipeline.execute(data, model_file=repr(self) + ".json", save=save)
 
-    def fit(self, inputs, targets, **kwargs) -> K.callbacks.History:
+    def fit(self, hp, model, *args, **kwargs) -> K.callbacks.History:
         """
         Fit the model to the data.
 
@@ -113,7 +140,7 @@ class BidirectionalLSTM(Model):
         ]
         callbacks = kwargs.get("callbacks", [])
         callbacks = callbacks + tensorboard
-        return self._bidirLSTM.fit(inputs, targets, callbacks=callbacks, **kwargs)
+        return model.fit(*args, epochs=2, batch_size=100, **kwargs)
 
     def grid_search(self, x_train, y_train, n_iter=30):
         """

@@ -95,7 +95,9 @@ class Pipeline:
             )
 
         # Load the preprocessing result if it already exists
-        if model_file is not None and os.path.exists(model_file):
+        if model_file is not None and os.path.exists(
+            os.path.join(PIPELINE_DATASET_PATH, model_file)
+        ):
             return utils.load_preprocessing(model_file)
 
         cpu_count = os.cpu_count()

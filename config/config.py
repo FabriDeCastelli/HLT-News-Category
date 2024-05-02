@@ -15,11 +15,21 @@ DATASET_PATH = os.path.join(
     PROJECT_FOLDER_PATH, "dataset", "News_Category_Dataset.json"
 )
 
+# HYPERPARAMETERS PATH
+HYPERPARAMETERS_PATH = os.path.join(PROJECT_FOLDER_PATH, "hyperparameters", "{}.yaml")
+
+TENSORBOARD_LOGS = os.path.join(PROJECT_FOLDER_PATH, "logs", "{}")
+
+# RESULT PATH
+RESULTS_DIRECTORY = os.path.join(PROJECT_FOLDER_PATH, "results", "{}")
+
 # MODELS PATH
 MODELS_PATH = os.path.join(PROJECT_FOLDER_PATH, "models")
 
+# PIPELINE PATH
 PIPELINE_DATASET_PATH = os.path.join(PROJECT_FOLDER_PATH, "dataset", "preprocessing")
 
+# TENSORBOARD PATH
 TENSORBOARD_LOGS = os.path.join(PROJECT_FOLDER_PATH, "logs", "{}")
 
 # RENAME CATEGORIES

@@ -6,7 +6,7 @@ import nltk
 import pandas as pd
 import re
 import string
-
+import yaml
 from scipy.sparse import isspmatrix_csr, save_npz, load_npz
 from config import config
 from nltk.tokenize import casual_tokenize
@@ -181,6 +181,19 @@ def load_preprocessing(model_file):
     if ".npz" in filepath:
         return load_npz(filepath)
     if ".json" in filepath:
-        return pd.read_json(filepath)
+        return pd.read_json(filepath)["full_article"]
     else:
         raise ValueError(f"The given path {filepath} is not a valid path.")
+
+
+def read_yaml(path):
+    """
+    Reads a file in .yaml format.
+
+    :param path: the path of the file to read
+    :return: the dictionary contained in the file
+    """
+    with open(path, "r") as file:
+        dictionary = yaml.load(file, Loader=yaml.FullLoader)
+
+    return dictionary
