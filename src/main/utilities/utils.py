@@ -10,6 +10,7 @@ import string
 from scipy.sparse import isspmatrix_csr, save_npz, load_npz
 from config import config
 from nltk.tokenize import casual_tokenize
+from sklearn.feature_extraction.text import CountVectorizer
 from unicodedata import normalize
 
 
@@ -165,6 +166,17 @@ def tfidf_vectorizer(corpus, parallel_mode=False):
     """
 
     return config.vectorizer.fit_transform(corpus)
+
+def count_vectorizer(corpus, parallel_mode=False):
+    """
+    Vectorize the text using the CountVectorizer.
+
+    :param corpus: The text to vectorize.
+    :param parallel_mode: A boolean indicating whether to run the function in parallel.
+    :return: The vectorized text.
+    """
+
+    return CountVectorizer().fit_transform(corpus)
 
 
 def load_preprocessing(model_file):
