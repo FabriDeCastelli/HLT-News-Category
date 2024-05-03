@@ -1,9 +1,0 @@
-vocab_size: [ 1000, 10000, 100000]
-
-embedding_dim: [90, 100, 110]
-
-max_sequence_length: [90, 100, 110]
-
-lstm_units: [128]
-
-learning_rate: [0.1, 0.02]

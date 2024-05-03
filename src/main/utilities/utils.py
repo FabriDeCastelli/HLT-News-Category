@@ -1,17 +1,11 @@
 """ This module contains utility functions for the project. """
 
 import os.path
-
-import nltk
+import numpy as np
 import pandas as pd
-import re
-import string
 import yaml
-from scipy.sparse import isspmatrix_csr, save_npz, load_npz
+from scipy.sparse import save_npz, load_npz
 from config import config
-from nltk.tokenize import casual_tokenize
-from sklearn.feature_extraction.text import CountVectorizer
-from unicodedata import normalize
 
 
 def save_preprocessing(results, model_file):
@@ -31,8 +25,8 @@ def save_preprocessing(results, model_file):
 
     if ".npz" in filepath:
         save_npz(filepath, results["full_article"])
-    elif ".json" in filepath:
-        pd.DataFrame(results).to_json(filepath)
+    elif ".npy" in filepath:
+        np.save(filepath, results["full_article"], allow_pickle=True)
     else:
         raise ValueError(f"File extension of {filepath} is not supported for saving.")
 
@@ -88,98 +82,6 @@ def get_dataset(filepath=config.DATASET_PATH, one_hot=False):
     return df.drop(columns=["category"]), targets
 
 
-def clean_text(corpus, parallel_mode=True) -> str:
-    """
-    Clean the text in the dataframe.
-
-    :param corpus: The text to clean.
-    :param parallel_mode: A boolean indicating whether to run the function in parallel.
-    :return: The dataframe with the text cleaned.
-    """
-    text = corpus.lower()
-    # remove square brackets
-    text = re.sub(r"\[|\]", "", text)
-    # remove special characters
-    text = re.sub(r"[^\w\s]", "", text)
-    # remove all punctuations
-    text = re.sub("[%s]" % re.escape(string.punctuation), "", text)
-    # remove angle brackets
-    text = re.sub(r"<(.*?)>", r"\1", text)
-    # remove newlines
-    text = re.sub("\n", "", text)
-    # remove special characters (example \u2014)
-    text = normalize("NFKD", text).encode("ascii", "ignore")
-    return text
-
-
-def stop_words_removal(corpus, parallel_mode=True) -> str:
-    """
-    Remove the stop words from the text.
-
-    :param corpus: The text to remove the stop words from.
-    :param parallel_mode: A boolean indicating whether to run the function in parallel.
-    :return: The text with the stop words removed, as a string.
-    """
-    stop_words = config.stop_words
-    if isinstance(corpus, bytes):
-        corpus = corpus.decode("utf-8")
-    words = corpus.split(" ")
-    words = [word for word in words if word not in stop_words]
-    return " ".join(words)
-
-
-def lemmatization(corpus, parallel_mode=True) -> str:
-    """
-    Lemmatize the text.
-
-    :param corpus: The text to lemmatize.
-    :param parallel_mode: A boolean indicating whether to run the function in parallel.
-    :return: The lemmatized text, as a string.
-    """
-
-    doc = config.nlp(corpus)
-    return " ".join([token.lemma_ for token in doc])
-
-
-def stemming(corpus, parallel_mode=True):
-    """
-    Stem the text.
-    """
-    res = " ".join(config.stemmer.stem(word) for word in corpus.split(" "))
-    return res
-
-
-def casual_tokenizer(corpus, parallel_mode=False):
-    """
-    Tokenize the text using the casual_tokenize function from NLTK.
-    """
-    return casual_tokenize(corpus)
-
-
-def tfidf_vectorizer(corpus, parallel_mode=False):
-    """
-    Vectorize the text using the TfidfVectorizer.
-
-    :param corpus: The text to vectorize.
-    :param parallel_mode: A boolean indicating whether to run the function in parallel.
-    :return: The vectorized text.
-    """
-
-    return config.vectorizer.fit_transform(corpus)
-
-
-def count_vectorizer(corpus, parallel_mode=False):
-    """
-    Vectorize the text using the CountVectorizer.
-
-    :param corpus: The text to vectorize.
-    :param parallel_mode: A boolean indicating whether to run the function in parallel.
-    :return: The vectorized text.
-    """
-
-    return CountVectorizer().fit_transform(corpus)
-
-
 def load_preprocessing(model_file):
     """
     Load the preprocessing results from a file.
@@ -193,8 +95,8 @@ def load_preprocessing(model_file):
         raise FileNotFoundError(f"The file {filepath} does not exist.")
     if ".npz" in filepath:
         return load_npz(filepath)
-    if ".json" in filepath:
-        return pd.read_json(filepath)["full_article"]
+    if ".npy" in filepath:
+        return np.load(filepath, allow_pickle=True)
     else:
         raise ValueError(f"The given path {filepath} is not a valid path.")
 

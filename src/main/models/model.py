@@ -1,10 +1,9 @@
 """ Model Abstract Class. """
 
+from abc import ABC, abstractmethod
 from typing import Callable, List
 
 import pandas as pd
-
-from abc import ABC, abstractmethod
 
 
 class Model(ABC):

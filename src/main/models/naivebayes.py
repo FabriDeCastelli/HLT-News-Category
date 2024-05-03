@@ -2,33 +2,29 @@
 
 from src.main.models.model import Model
 from src.main.pipeline.pipeline import Pipeline
-from config.config import PIPELINE_DATASET_PATH, MODELS_PATH
+from config.config import MODELS_PATH
 
-import os
 from typing import Callable, List
-
-import pandas as pd
-import joblib
-
 from sklearn.naive_bayes import MultinomialNB
-from sklearn.model_selection import RandomizedSearchCV
-from sklearn.metrics import (
-    get_scorer,
-)
+
+import joblib
+import pandas as pd
+import os
 
 
 class Naivebayes(Model):
     """
-    Multinomial Logistic Regression class.
+    Multinomial Naive Bayes class.
     """
 
     def __init__(self, model=None, **kwargs):
         """
         Constructor for the Multinomial Naive Bayes class.
-        Instantiates the NB model by creating a sklearn LogisticRegression object, see the sklearn
+        Instantiates the NB model by creating a sklearn MultinomialNB object, see the sklearn
         documentation at
-        https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html
+        https://scikit-learn.org/stable/modules/naive_bayes.html#multinomial-naive-bayes
 
+        :param model: the MultinomialNB model, if provided in input **kwargs are ignored
         :param kwargs: the arguments that are going to be passed to the Logistic Regression model.
         """
         if model is not None:
@@ -38,14 +34,14 @@ class Naivebayes(Model):
         self._pipeline = None
 
     @property
-    def logistic(self):
+    def naivebayes(self):
         return self._naivebayes
 
-    @logistic.setter
-    def logistic(self, model):
+    @naivebayes.setter
+    def naivebayes(self, model):
         if not isinstance(model, MultinomialNB):
             raise ValueError(
-                "The model should be an instance of sklearn.linear_model.LogisticRegression"
+                "The model should be an instance of sklearn.linear_model.MultinomialNB"
             )
         self._naivebayes = model
 
@@ -59,7 +55,6 @@ class Naivebayes(Model):
         Set the pipeline for the model.
 
         :param pipeline: an array of functions that are going to be executed in the pipeline.
-        :return:
         """
         self._pipeline = Pipeline(pipeline)
 
