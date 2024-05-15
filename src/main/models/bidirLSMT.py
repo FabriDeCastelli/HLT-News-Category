@@ -238,7 +238,8 @@ class BidirectionalLSTM(Model, HyperModel):
         Save the model to a file.
         """
         path = os.path.join(config.MODELS_PATH, repr(self) + ".keras")
-        os.mkdir(config.MODELS_PATH)
+        if not os.path.exists(config.MODELS_PATH):
+            os.mkdir(config.MODELS_PATH)
         self._bidirLSTM.save(path)
 
     @classmethod
@@ -246,10 +247,10 @@ class BidirectionalLSTM(Model, HyperModel):
         """
         Load the model from a file.
         """
-        path = os.path.join(config.MODELS_PATH, repr(cls) + ".keras")
+        path = os.path.join(config.MODELS_PATH, cls.__name__ + ".keras")
         assert os.path.isfile(
             path
-        ), f"Error: trying to load {repr(cls)} model at unknown path {path}"
+        ), f"Error: trying to load {cls.__name__} model at unknown path {path}"
         return cls(model=K.saving.load_model(path))
 
     def summary(self):

@@ -4,20 +4,26 @@ isort
 mypy
 doc8
 pre-commit
-pandas~=2.2.2
-bertopic
-dataprep
-numpy~=1.26.4
-nltk~=3.8.1
-scikit-learn~=1.4.2
-spacy~=3.7.3
-matplotlib~=3.8.4
-seaborn~=0.13.2
 
 joblib~=1.4.0
-scipy~=1.13.0
-keras~=3.2.1
 
+pandas
+dataprep
+numpy
+matplotlib
+seaborn
 yaml~=0.2.5
 pyyaml~=6.0.1
+
+
+scipy~=1.13.0
+scikit-learn
 tensorflow~=2.16.1
+tensorboard~=2.16.2
+keras~=3.3.3
+
+bertopic
+nltk~=3.8.1
+spacy~=3.7.3
+
+python~=3.11.8
