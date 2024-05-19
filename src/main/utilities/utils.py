@@ -126,11 +126,14 @@ def split_train_val_test(inputs, targets, validation_size=0.2, test_size=0.1, ra
     """
     from sklearn.model_selection import train_test_split
 
+    if validation_size + test_size >= 1:
+        raise ValueError("The sum of validation_size and test_size must be less than 1.")
+
     # Split the dataset into training and test sets
-    x_train, x_test, y_train, y_test = train_test_split(inputs, targets, test_size=test_size, random_state=random_state)
+    x_train, x_test, y_train, y_test = train_test_split(inputs, targets, test_size=test_size, random_state=random_state, stratify=targets)
     # Adjust the validation size to be relative to the training size
     validation_size = validation_size / (1 - test_size)
     # Split the training set into training and validation sets
-    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=validation_size, random_state=random_state)
+    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=validation_size, random_state=random_state, stratify=y_train)
 
     return x_train, x_val, x_test, y_train, y_val, y_test
