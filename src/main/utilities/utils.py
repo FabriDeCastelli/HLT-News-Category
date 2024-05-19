@@ -5,8 +5,9 @@ import numpy as np
 import pandas as pd
 import yaml
 from scipy.sparse import save_npz, load_npz
+from gensim.models import KeyedVectors
 from config import config
-
+from sklearn.model_selection import train_test_split
 
 def save_preprocessing(results, model_file):
     """
@@ -113,7 +114,6 @@ def read_yaml(path):
 
     return dictionary
 
-
 def split_train_val_test(inputs, targets, validation_size=0.2, test_size=0.1, random_state=42):
     """
     Split the dataset into training, validation, and test sets.
@@ -124,7 +124,6 @@ def split_train_val_test(inputs, targets, validation_size=0.2, test_size=0.1, ra
     :param test_size: The size of the test set.
     :return: The split dataset.
     """
-    from sklearn.model_selection import train_test_split
 
     if validation_size + test_size >= 1:
         raise ValueError("The sum of validation_size and test_size must be less than 1.")
@@ -137,3 +136,46 @@ def split_train_val_test(inputs, targets, validation_size=0.2, test_size=0.1, ra
     x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=validation_size, random_state=random_state, stratify=y_train)
 
     return x_train, x_val, x_test, y_train, y_val, y_test
+
+def load_pretrained_embedddings(embedding_path, embedding):
+    """
+    Load the pretrained embeddings from the given path.
+
+    :param embedding_path: The path to the pretrained embeddings.
+    :param embedding: The type of the embedding.
+    :return: The pretrained embeddings.
+    """
+    if(embedding =="google"):
+        return KeyedVectors.load_word2vec_format(embedding_path, binary=True)
+    elif(embedding =="fastText"):
+        return KeyedVectors.load_word2vec_format(embedding_path)
+    elif(embedding =="glove"):
+        glove_embeddings = {}
+        with open(embedding_path) as f:
+            for line in f:
+                word, coefs = line.split(maxsplit=1)
+                coefs = np.fromstring(coefs, "f", sep=" ")
+                glove_embeddings[word] = coefs
+        return glove_embeddings
+
+def create_embedding_matrix(pretrained_embeddings):
+    """
+    Create the embedding matrix from the word embeddings.
+    :param word_index: The word index.
+    :param pretrained_embeddings: The pretrained embeddings.
+    :return: The embedding matrix.
+    """
+    find = 0
+    not_find = 0
+    unmached_words = []
+    for word, i in config.word_index.items():
+        if word in pretrained_embeddings:
+            embedding_vector = pretrained_embeddings[word]
+            config.embedding_matrix[i] = embedding_vector
+            find += 1
+        else:
+            config.embedding_matrix[i] = np.random.normal(0, 1, config.EMBEDDING_DIM)
+            not_find += 1
+            if word not in unmached_words:
+                unmached_words.append(word)
+    return find/(find+not_find), unmached_words

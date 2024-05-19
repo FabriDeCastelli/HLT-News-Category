@@ -71,8 +71,10 @@ def stemming(corpus, parallel_mode=True):
 def tokenize(corpus, parallel_mode=False):
     tokenizer = config.tokenizer
     tokenizer.fit_on_texts(corpus)
+    word_index = dict(list(tokenizer.word_index.items())[:config.VOCAB_SIZE - 1])
+    config.word_index = word_index
     sequences = tokenizer.texts_to_sequences(corpus)
-    return pad_sequences(sequences, maxlen=40)
+    return pad_sequences(sequences, maxlen=config.MAX_SEQ_LENGHT)
 
 
 def tfidf_vectorizer(corpus, parallel_mode=False):
