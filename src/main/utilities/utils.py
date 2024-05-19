@@ -112,3 +112,25 @@ def read_yaml(path):
         dictionary = yaml.load(file, Loader=yaml.FullLoader)
 
     return dictionary
+
+
+def split_train_val_test(inputs, targets, validation_size=0.2, test_size=0.1, random_state=42):
+    """
+    Split the dataset into training, validation, and test sets.
+
+    :param inputs: The input data.
+    :param targets: The target data.
+    :param validation_size: The size of the validation set.
+    :param test_size: The size of the test set.
+    :return: The split dataset.
+    """
+    from sklearn.model_selection import train_test_split
+
+    # Split the dataset into training and test sets
+    x_train, x_test, y_train, y_test = train_test_split(inputs, targets, test_size=test_size, random_state=random_state)
+    # Adjust the validation size to be relative to the training size
+    validation_size = validation_size / (1 - test_size)
+    # Split the training set into training and validation sets
+    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=validation_size, random_state=random_state)
+
+    return x_train, x_val, x_test, y_train, y_val, y_test
