@@ -34,7 +34,7 @@ class BidirectionalLSTM(Model, HyperModel):
 
         self._bidirLSTM = self.build(None, **kwargs)
 
-        self.hyperparameters = read_yaml(config.HYPERPARAMETERS_PATH.format("LSTM"))
+        self.hyperparameters = read_yaml(config.HYPERPARAMETERS_PATH.format(repr(self)))
 
     def build(self, hp=None, **kwargs):
 
@@ -61,31 +61,39 @@ class BidirectionalLSTM(Model, HyperModel):
         bidirLSTM.add(
             K.layers.Bidirectional(
                 K.layers.LSTM(
-                    units=lstm_units_1, 
+                    units=lstm_units_1,
                     dropout=hp.Choice("dropout1", self.hyperparameters["dropout1"]),
-                    return_sequences=True
+                    return_sequences=True,
                 )
             )
         )
         bidirLSTM.add(
             K.layers.Bidirectional(
                 K.layers.LSTM(
-                    units=lstm_units_2, 
-                    dropout=hp.Choice("dropout2", self.hyperparameters["dropout2"])
+                    units=lstm_units_2,
+                    dropout=hp.Choice("dropout2", self.hyperparameters["dropout2"]),
                 )
             )
         )
-        bidirLSTM.add(K.layers.Dense(hp.Choice("dense1", self.hyperparameters["dense1"]), activation='relu'))
+        bidirLSTM.add(
+            K.layers.Dense(
+                hp.Choice("dense1", self.hyperparameters["dense1"]), activation="relu"
+            )
+        )
         bidirLSTM.add(K.layers.Dropout(0.3, seed=10))
-        bidirLSTM.add(K.layers.Dense(hp.Choice("dense2", self.hyperparameters["dense2"]), activation='relu'))        
+        bidirLSTM.add(
+            K.layers.Dense(
+                hp.Choice("dense2", self.hyperparameters["dense2"]), activation="relu"
+            )
+        )
         bidirLSTM.add(K.layers.Dense(units=5, activation="softmax"))
-        
+
         optimizer = optimizers.Adam(
             learning_rate=hp.Choice(
                 "learning_rate", self.hyperparameters["learning_rate"]
             )
         )
-        
+
         bidirLSTM.compile(
             loss="categorical_crossentropy", optimizer=optimizer, metrics=["accuracy"]
         )

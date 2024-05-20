@@ -9,6 +9,7 @@ from gensim.models import KeyedVectors
 from config import config
 from sklearn.model_selection import train_test_split
 
+
 def save_preprocessing(results, model_file):
     """
     Save the preprocessing results to a file.
@@ -114,7 +115,10 @@ def read_yaml(path):
 
     return dictionary
 
-def split_train_val_test(inputs, targets, validation_size=0.2, test_size=0.1, random_state=42):
+
+def split_train_val_test(
+    inputs, targets, validation_size=0.2, test_size=0.1, random_state=42
+):
     """
     Split the dataset into training, validation, and test sets.
 
@@ -126,16 +130,31 @@ def split_train_val_test(inputs, targets, validation_size=0.2, test_size=0.1, ra
     """
 
     if validation_size + test_size >= 1:
-        raise ValueError("The sum of validation_size and test_size must be less than 1.")
+        raise ValueError(
+            "The sum of validation_size and test_size must be less than 1."
+        )
 
     # Split the dataset into training and test sets
-    x_train, x_test, y_train, y_test = train_test_split(inputs, targets, test_size=test_size, random_state=random_state, stratify=targets)
+    x_train, x_test, y_train, y_test = train_test_split(
+        inputs,
+        targets,
+        test_size=test_size,
+        random_state=random_state,
+        stratify=targets,
+    )
     # Adjust the validation size to be relative to the training size
     validation_size = validation_size / (1 - test_size)
     # Split the training set into training and validation sets
-    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=validation_size, random_state=random_state, stratify=y_train)
+    x_train, x_val, y_train, y_val = train_test_split(
+        x_train,
+        y_train,
+        test_size=validation_size,
+        random_state=random_state,
+        stratify=y_train,
+    )
 
     return x_train, x_val, x_test, y_train, y_val, y_test
+
 
 def load_pretrained_embedddings(embedding_path, embedding):
     """
@@ -145,11 +164,11 @@ def load_pretrained_embedddings(embedding_path, embedding):
     :param embedding: The type of the embedding.
     :return: The pretrained embeddings.
     """
-    if(embedding =="google"):
+    if embedding == "google":
         return KeyedVectors.load_word2vec_format(embedding_path, binary=True)
-    elif(embedding =="fastText"):
+    elif embedding == "fastText":
         return KeyedVectors.load_word2vec_format(embedding_path)
-    elif(embedding =="glove"):
+    elif embedding == "glove":
         glove_embeddings = {}
         with open(embedding_path) as f:
             for line in f:
@@ -157,6 +176,7 @@ def load_pretrained_embedddings(embedding_path, embedding):
                 coefs = np.fromstring(coefs, "f", sep=" ")
                 glove_embeddings[word] = coefs
         return glove_embeddings
+
 
 def create_embedding_matrix(pretrained_embeddings):
     """
@@ -178,4 +198,4 @@ def create_embedding_matrix(pretrained_embeddings):
             not_find += 1
             if word not in unmached_words:
                 unmached_words.append(word)
-    return find/(find+not_find), unmached_words
+    return find / (find + not_find), unmached_words

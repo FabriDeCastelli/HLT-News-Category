@@ -1,22 +1,19 @@
 """ Multinomial Logistic Regression. """
 
-from abc import ABC
-
 from src.main.models.model import Model
 from src.main.pipeline.pipeline import Pipeline
-from config.config import PIPELINE_DATASET_PATH, MODELS_PATH
+from config.config import MODELS_PATH, HYPERPARAMETERS_PATH
+from src.main.utilities.utils import read_yaml
 
 import os
+import warnings
 from typing import Callable, List
 
 import pandas as pd
 import joblib
 
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import RandomizedSearchCV
-from sklearn.metrics import (
-    get_scorer,
-)
+from sklearn.model_selection import RandomizedSearchCV, PredefinedSplit
 
 
 class Logistic(Model):
@@ -38,6 +35,7 @@ class Logistic(Model):
         else:
             self._logistic = LogisticRegression(**kwargs)
         self._pipeline = None
+        self.hyperparameters = read_yaml(HYPERPARAMETERS_PATH.format(repr(self)))
 
     @property
     def logistic(self):
@@ -89,42 +87,35 @@ class Logistic(Model):
         else:
             self.logistic = self.logistic.fit(inputs, targets, sample_weight)
 
-    def grid_search(self, x_train, y_train, n_iter=30):
+    def grid_search(self, x_train, y_train, x_val, y_val, n_iter=30):
         """
         Cross validate the model.
 
         :param x_train: the training data
         :param y_train: the target values
+        :param x_val: the validation data
+        :param y_val: the target values for the validation data
         :param n_iter: the number of iterations to run the Randomized Search
         :return: the cross validation results
         """
 
-        # Parameter grid for Logistic Regressor
-        params = {
-            "penalty": ["l2"],
-            "C": [0.05, 0.1, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6],
-            "solver": ["lbfgs", "sag", "saga"],
-            "class_weight": ["balanced", None],
-        }
-
-        scoring = {
-            "accuracy": get_scorer("accuracy"),
-            "f1-macro": get_scorer("macro"),
-            "precision": get_scorer("precision_macro"),
-            "recall": get_scorer("recall_macro"),
-        }
+        predefined_split = PredefinedSplit(
+            test_fold=[-1] * len(x_train) + [0] * len(x_val)
+        )
 
         # Randomized Search
-        rscv = RandomizedSearchCV(
+        randomized_search = RandomizedSearchCV(
             estimator=self.logistic,
-            param_distributions=params,
+            param_distributions=self.hyperparameters,
             refit="f1_macro",
             n_jobs=-1,
             n_iter=n_iter,
             random_state=42,
             verbose=True,
+            cv=predefined_split,
         )
-        result = rscv.fit(x_train, y_train)
+
+        result = randomized_search.fit(x_train, y_train)
         self.logistic = result.best_estimator_
         return result
 
