@@ -5,7 +5,7 @@ import os
 import nltk
 from nltk.corpus import stopwords
 import spacy
-from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer, TfidfTransformer
 from tensorflow.keras.preprocessing.text import Tokenizer
 
 # PROJECT FOLDER PATH
@@ -49,3 +49,5 @@ vectorizer = TfidfVectorizer()
 stop_words = set(stopwords.words("english"))
 tokenizer = Tokenizer()
 count_vectorizer = CountVectorizer()
+transformer = TfidfTransformer()
+

@@ -75,6 +75,20 @@ def tokenize(corpus, parallel_mode=False):
     return pad_sequences(sequences, maxlen=40)
 
 
+def select_features(corpus, targets, k, parallel_mode=False):
+    """
+    Select the features from the text.
+
+    :param corpus: The text to select the features from.
+    :param parallel_mode: A boolean indicating whether to run the function in parallel.
+    :return: The selected features.
+    """
+    from sklearn.feature_selection import SelectKBest, mutual_info_classif, f_classif
+    
+    selector = SelectKBest(f_classif, k=k)
+    return selector.fit_transform(corpus, targets)
+
+
 def tfidf_vectorizer(corpus, parallel_mode=False):
     """
     Vectorize the text using the TfidfVectorizer.
@@ -85,6 +99,17 @@ def tfidf_vectorizer(corpus, parallel_mode=False):
     """
 
     return config.vectorizer.fit_transform(corpus)
+
+def tfidf_transformer(corpus, parallel_mode=False):
+    """
+    Transform the data using the TfidfTransformer.
+
+    :param corpus: The text to transform.
+    :param parallel_mode: A boolean indicating whether to run the function in parallel.
+    :return: The transformed text.
+    """
+
+    return config.transformer.fit_transform(corpus)
 
 
 def count_vectorizer(corpus, parallel_mode=False):
