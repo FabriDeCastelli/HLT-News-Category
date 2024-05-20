@@ -58,9 +58,10 @@ stop_words = set(stopwords.words("english"))
 VOCAB_SIZE = 30000
 EMBEDDING_DIM = 300
 MAX_SEQ_LENGHT = 200
+num_words = 0
 embedding_matrix = np.zeros((VOCAB_SIZE, EMBEDDING_DIM))
 tokenizer = Tokenizer(num_words=VOCAB_SIZE)
-word_index = 104
+word_index = {}
 count_vectorizer = CountVectorizer()
 transformer = TfidfTransformer()
 

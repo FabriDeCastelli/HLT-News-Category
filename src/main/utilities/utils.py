@@ -188,6 +188,7 @@ def create_embedding_matrix(pretrained_embeddings):
     find = 0
     not_find = 0
     unmached_words = []
+    config.embedding_matrix = np.zeros((config.num_words, config.EMBEDDING_DIM))
     for word, i in config.word_index.items():
         if word in pretrained_embeddings:
             embedding_vector = pretrained_embeddings[word]

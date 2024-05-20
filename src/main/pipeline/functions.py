@@ -1,10 +1,12 @@
 """ Functions Module. """
 
+import numpy as np
 from unicodedata import normalize
 from keras.utils import pad_sequences
 from config import config
 import re
 import string
+import contractions
 
 
 def clean_text(corpus, parallel_mode=True) -> str:
@@ -30,6 +32,16 @@ def clean_text(corpus, parallel_mode=True) -> str:
     text = normalize("NFKD", text).encode("ascii", "ignore")
     return text
 
+def remove_contractions(corpus, parallel_mode=True) -> str:
+    """
+    Remove contracted form from corpus
+
+    :param corpus: the sentence to remove contractions from
+    :return: the cleaned sentence
+    """
+    words = corpus.split()
+    filtered_words = [contractions.fix(word)for word in words]
+    return ' '.join(filtered_words)
 
 def stop_words_removal(corpus, parallel_mode=True) -> str:
     """
@@ -71,8 +83,8 @@ def stemming(corpus, parallel_mode=True):
 def tokenize(corpus, parallel_mode=False):
     tokenizer = config.tokenizer
     tokenizer.fit_on_texts(corpus)
-    word_index = dict(list(tokenizer.word_index.items())[:config.VOCAB_SIZE - 1])
-    config.word_index = word_index
+    config.word_index = tokenizer.word_index
+    config.num_words = len(config.word_index) + 1
     sequences = tokenizer.texts_to_sequences(corpus)
     return pad_sequences(sequences, maxlen=config.MAX_SEQ_LENGHT)
 

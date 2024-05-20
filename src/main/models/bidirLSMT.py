@@ -51,7 +51,7 @@ class BidirectionalLSTM(Model, HyperModel):
         bidirLSTM.add(K.layers.InputLayer(shape=(None,)))
         bidirLSTM.add(
             K.layers.Embedding(
-                input_dim=config.VOCAB_SIZE,
+                input_dim=config.num_words,
                 output_dim=embedding_dim,
                 input_length=config.MAX_SEQ_LENGHT,
                 weights=[config.embedding_matrix],
@@ -186,8 +186,9 @@ class BidirectionalLSTM(Model, HyperModel):
         self,
         x_train,
         y_train,
+        x_val,
+        y_val,
         callbacks=None,
-        validation_split=0.2,
         n_iter=30,
         refit=True,
     ):
@@ -218,17 +219,18 @@ class BidirectionalLSTM(Model, HyperModel):
             project_name=repr(self),
         )
         tuner.search(
-            x_train, y_train, callbacks=callbacks, validation_split=validation_split
+            x_train, y_train, callbacks=callbacks, validation_data=(x_val, y_val)
         )
         best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
         self.bidirLSTM = tuner.hypermodel.build(best_hps)
+        self.bidirLSTM = tuner.get_best_models(num_models=1)[0]
 
         if refit:
             self.fit(
                 x=x_train,
                 y=y_train,
                 callbacks=callbacks,
-                validation_split=validation_split,
+                validation_data=(x_val, y_val)
             )
 
         return best_hps
