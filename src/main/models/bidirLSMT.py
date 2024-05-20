@@ -7,7 +7,6 @@ from config import config
 from keras_tuner import HyperModel
 from src.main.models.model import Model
 from src.main.pipeline.pipeline import Pipeline
-from config.config import HYPERPARAMETERS_PATH, RESULTS_DIRECTORY
 from src.main.utilities.utils import read_yaml
 from typing import Callable, List
 from keras import optimizers
@@ -35,7 +34,7 @@ class BidirectionalLSTM(Model, HyperModel):
 
         self._bidirLSTM = self.build(None, **kwargs)
 
-        self.hyperparameters = read_yaml(HYPERPARAMETERS_PATH.format("LSTM"))
+        self.hyperparameters = read_yaml(config.HYPERPARAMETERS_PATH.format("LSTM"))
 
     def build(self, hp=None, **kwargs):
 
@@ -44,13 +43,7 @@ class BidirectionalLSTM(Model, HyperModel):
         return self._build_hp(hp)
 
     def _build_hp(self, hp):
-        vocab_size = hp.Choice("vocab_size", self.hyperparameters["vocab_size"])
-        embedding_dim = hp.Choice(
-            "embedding_dim", self.hyperparameters["embedding_dim"]
-        )
-        max_sequence_length = hp.Choice(
-            "max_sequence_length", self.hyperparameters["max_sequence_length"]
-        )
+        embedding_dim = config.EMBEDDING_DIM
         lstm_units_1 = hp.Choice("lstm_units_1", self.hyperparameters["lstm_units_1"])
         lstm_units_2 = hp.Choice("lstm_units_2", self.hyperparameters["lstm_units_2"])
 
@@ -58,23 +51,41 @@ class BidirectionalLSTM(Model, HyperModel):
         bidirLSTM.add(K.layers.InputLayer(shape=(None,)))
         bidirLSTM.add(
             K.layers.Embedding(
-                input_dim=vocab_size,
+                input_dim=config.VOCAB_SIZE,
                 output_dim=embedding_dim,
-                input_length=max_sequence_length,
+                input_length=config.MAX_SEQ_LENGHT,
+                weights=[config.embedding_matrix],
+                trainable=False,
             )
         )
         bidirLSTM.add(
             K.layers.Bidirectional(
-                K.layers.LSTM(units=lstm_units_1, return_sequences=True)
+                K.layers.LSTM(
+                    units=lstm_units_1, 
+                    dropout=hp.Choice("dropout1", self.hyperparameters["dropout1"]),
+                    return_sequences=True
+                )
             )
         )
-        bidirLSTM.add(K.layers.Bidirectional(K.layers.LSTM(units=lstm_units_2)))
+        bidirLSTM.add(
+            K.layers.Bidirectional(
+                K.layers.LSTM(
+                    units=lstm_units_2, 
+                    dropout=hp.Choice("dropout2", self.hyperparameters["dropout2"])
+                )
+            )
+        )
+        bidirLSTM.add(K.layers.Dense(hp.Choice("dense1", self.hyperparameters["dense1"]), activation='relu'))
+        bidirLSTM.add(K.layers.Dropout(0.3, seed=10))
+        bidirLSTM.add(K.layers.Dense(hp.Choice("dense2", self.hyperparameters["dense2"]), activation='relu'))        
         bidirLSTM.add(K.layers.Dense(units=5, activation="softmax"))
+        
         optimizer = optimizers.Adam(
             learning_rate=hp.Choice(
                 "learning_rate", self.hyperparameters["learning_rate"]
             )
         )
+        
         bidirLSTM.compile(
             loss="categorical_crossentropy", optimizer=optimizer, metrics=["accuracy"]
         )
@@ -195,7 +206,7 @@ class BidirectionalLSTM(Model, HyperModel):
             objective="val_accuracy",
             max_trials=n_iter,
             executions_per_trial=1,
-            directory=RESULTS_DIRECTORY.format(repr(self)),
+            directory=config.RESULTS_DIRECTORY.format(repr(self)),
             project_name=repr(self),
         )
         tuner.search(

@@ -1,6 +1,7 @@
 """ Configuration file for the project. """
 
 import os
+import numpy as np
 
 import nltk
 from nltk.corpus import stopwords
@@ -12,9 +13,10 @@ from tensorflow.keras.preprocessing.text import Tokenizer
 PROJECT_FOLDER_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # DATASET PATH
-DATASET_PATH = os.path.join(
-    PROJECT_FOLDER_PATH, "dataset", "News_Category_Dataset.json"
-)
+DATASET_PATH = os.path.join(PROJECT_FOLDER_PATH, "dataset", "News_Category_Dataset.json")
+
+# PRETRAINED EMBEDDINGS PATH
+EMBEDDINGS_PATH = os.path.join(PROJECT_FOLDER_PATH, "embeddings")
 
 # HYPERPARAMETERS PATH
 HYPERPARAMETERS_PATH = os.path.join(PROJECT_FOLDER_PATH, "hyperparameters", "{}.yaml")
@@ -42,12 +44,23 @@ drop_column = ["link", "authors", "date"]
 merged_categories = [life, entertainment, voices, sports, politics]
 rename_y = {"Entertainment": 0, "Life": 1, "Politics": 2, "Sport": 3, "Voices": 4}
 
+#PRETRAINED EMBEDDINGS
+glove_file = "glove.6B.300d.txt"
+google_file = "GoogleNews-vectors-negative300.bin"
+fastText_file = "wiki-news-300d-1M-subword.vec"
+
+#PIPELINE STUFF
 nltk.download("stopwords", quiet=True)
 nlp = spacy.load("en_core_web_sm")
 stemmer = nltk.SnowballStemmer("english")
 vectorizer = TfidfVectorizer()
 stop_words = set(stopwords.words("english"))
-tokenizer = Tokenizer()
+VOCAB_SIZE = 30000
+EMBEDDING_DIM = 300
+MAX_SEQ_LENGHT = 200
+embedding_matrix = np.zeros((VOCAB_SIZE, EMBEDDING_DIM))
+tokenizer = Tokenizer(num_words=VOCAB_SIZE)
+word_index = 104
 count_vectorizer = CountVectorizer()
 transformer = TfidfTransformer()
 
