@@ -87,7 +87,7 @@ class Logistic(Model):
         else:
             self.logistic = self.logistic.fit(inputs, targets, sample_weight)
 
-    def grid_search(self, x_train, y_train, x_val, y_val, n_iter=30):
+    def grid_search(self, x_train, y_train, n_iter=30):
         """
         Cross validate the model.
 
@@ -99,10 +99,6 @@ class Logistic(Model):
         :return: the cross validation results
         """
 
-        predefined_split = PredefinedSplit(
-            test_fold=[-1] * len(x_train) + [0] * len(x_val)
-        )
-
         # Randomized Search
         randomized_search = RandomizedSearchCV(
             estimator=self.logistic,
@@ -112,7 +108,6 @@ class Logistic(Model):
             n_iter=n_iter,
             random_state=42,
             verbose=True,
-            cv=predefined_split,
         )
 
         result = randomized_search.fit(x_train, y_train)
