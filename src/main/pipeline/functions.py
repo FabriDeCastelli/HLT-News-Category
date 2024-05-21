@@ -20,20 +20,23 @@ def clean_text(corpus, parallel_mode=True) -> str:
     text = corpus.lower()
     # remove square brackets
     text = re.sub(r"\[|\]", "", text)
-    # remove special characters
-    text = re.sub(r"[^\w\s]", "", text)
-    # remove all punctuations
-    text = re.sub("[%s]" % re.escape(string.punctuation), "", text)
+    # remove (VIDEO), (PHOTOS) or combinations of them
+    pattern = r"\(PHOTOS\) | \(VIDEO\ | \(VIDEO, PHOTOS\) | \(PHOTOS, VIDEO\)"
+    text = re.sub(pattern, "", text)
+    # remove punctuation
+    text = re.sub(r"[.,;:!?^#\"]", "", text)
     # remove angle brackets
-    text = re.sub(r"<(.*?)>", r"\1", text)
+    text = re.sub(r"[<>]", "", text)
+    # remove ' in the text
+    text = re.sub(r"'(\w+)'", r"\1", text)
     # remove newlines
     text = re.sub("\n", "", text)
     # remove special characters (example \u2014)
     text = normalize("NFKD", text).encode("ascii", "ignore")
-    return text
+    return text.decode("utf-8")
 
 
-def remove_contractions(corpus, parallel_mode=False) -> str:
+def remove_contractions(corpus, parallel_mode=True) -> str:
     """
     Remove contracted form from corpus
 
@@ -43,7 +46,7 @@ def remove_contractions(corpus, parallel_mode=False) -> str:
     if isinstance(corpus, bytes):
         corpus = corpus.decode("utf-8")
     words = corpus.split(" ")
-    filtered_words = [contractions.fix(word) for word in words]
+    filtered_words = [contractions.fix(str(word)) for word in words]
     return " ".join(filtered_words)
 
 
@@ -102,7 +105,7 @@ def select_features(corpus, targets, k, parallel_mode=False):
     :return: The selected features.
     """
     from sklearn.feature_selection import SelectKBest, mutual_info_classif, f_classif
-    
+
     selector = SelectKBest(f_classif, k=k)
     return selector.fit_transform(corpus, targets)
 
@@ -117,6 +120,7 @@ def tfidf_vectorizer(corpus, parallel_mode=False):
     """
 
     return config.vectorizer.fit_transform(corpus)
+
 
 def tfidf_transformer(corpus, parallel_mode=False):
     """
