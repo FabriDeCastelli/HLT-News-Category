@@ -10,12 +10,13 @@ from sklearn.metrics import (
 )
 
 
-def plot_confusion_matrix(y_test, y_pred):
+def plot_confusion_matrix(y_test, y_pred, path=None):
     """
     plot the confusion matrix.
 
     :param y_test: real target values
     :param y_pred: the predicted values
+    :param path: the path to save the plot
     """
     cm = confusion_matrix(y_test, y_pred)
 
@@ -36,6 +37,8 @@ def plot_confusion_matrix(y_test, y_pred):
     plt.xlabel("Predicted labels")
     plt.ylabel("True labels")
     plt.title("Confusion Matrix")
+    if path is not None:
+        plt.savefig(path)
     plt.show()
 
 

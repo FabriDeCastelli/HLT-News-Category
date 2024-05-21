@@ -1,9 +1,15 @@
 """ Model Abstract Class. """
 
+import inspect
+import os
 from abc import ABC, abstractmethod
 from typing import Callable, List
 
 import pandas as pd
+from sklearn.metrics import classification_report
+
+from config.config import RESULTS_DIRECTORY
+from main.utilities import plotting
 
 
 class Model(ABC):
@@ -74,6 +80,21 @@ class Model(ABC):
         Load the model.
         """
         raise NotImplementedError()
+
+    def save_results(self, x_test, y_test):
+        """
+        Save the results.
+        """
+        y_pred = self.predict(x_test)
+        report = classification_report(y_test, y_pred)
+        directory = RESULTS_DIRECTORY.format(repr(self))
+        os.makedirs(directory, exist_ok=True)
+        path = os.path.join(directory, "metrics.txt")
+        with open(path, "w") as file:
+            file.write(report)
+        plotting.plot_confusion_matrix(
+            y_test, y_pred, path=os.path.join(directory, "confusion_matrix.png")
+        )
 
     def __repr__(self):
         return self.__class__.__name__
