@@ -12,6 +12,7 @@ The second parameter (parallel_mode) is only inspected at run_time by the Pipeli
 In the end of the file there are some general functions that are not strictly part of the automatic pipeline.
 """
 
+import os
 from typing import List
 from unicodedata import normalize
 
@@ -23,6 +24,7 @@ from keras.utils import pad_sequences
 from config import config
 import re
 import contractions
+import pickle
 
 
 # region Parallelizable functions
@@ -134,8 +136,13 @@ def tokenize(corpus: List[str], parallel_mode=False) -> np.ndarray:
     """
     tokenizer = config.tokenizer
     tokenizer.fit_on_texts(corpus)
-    config.word_index = tokenizer.word_index
-    config.num_words = len(config.word_index) + 1
+    word_index = tokenizer.word_index
+    # save the word index
+    path = os.path.join(config.PIPELINE_DATASET_PATH, "word_index.pkl")
+    with open(path, "wb") as f:
+        pickle.dump(word_index, f)
+
+    config.num_words = len(word_index) + 1
     sequences = tokenizer.texts_to_sequences(corpus)
     return pad_sequences(sequences, maxlen=config.MAX_SEQ_LENGTH)
 

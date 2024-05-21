@@ -5,9 +5,11 @@ import os
 from abc import ABC, abstractmethod
 from typing import Callable, List
 
+import numpy as np
 import pandas as pd
 from sklearn.metrics import classification_report
 
+from config import config
 from config.config import RESULTS_DIRECTORY
 from main.utilities import plotting
 
@@ -89,6 +91,9 @@ class Model(ABC):
         :param x_test: The test input data.
         :param y_test: The test target data.
         """
+        if y_test.ndim == 2:
+            y_test = y_test.to_numpy().argmax(axis=1)
+            y_test = np.vectorize(config.id_to_category.get)(y_test)
         y_pred = self.predict(x_test)
         report = classification_report(y_test, y_pred)
         directory = RESULTS_DIRECTORY.format(repr(self))

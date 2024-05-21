@@ -4,9 +4,12 @@ from datetime import datetime
 
 import keras as K
 import keras_tuner as kt
+import numpy as np
 
 from config import config
 from keras_tuner import HyperModel
+
+from main.utilities import utils
 from src.main.models.model import Model
 from src.main.pipeline.pipeline import Pipeline
 from src.main.utilities.utils import read_yaml
@@ -22,7 +25,9 @@ class BidirectionalLSTM(Model, HyperModel):
     Bidirectional LSTM class.
     """
 
-    def __init__(self, model: K.models.Sequential = None, **kwargs):
+    def __init__(
+        self, model: K.models.Sequential = None, pretrained_embeddings=None, **kwargs
+    ):
         """
         Constructor for the Bidirectional LSTM class.
 
@@ -34,8 +39,13 @@ class BidirectionalLSTM(Model, HyperModel):
             self.bidirLSTM = model
             return
 
-        self._bidirLSTM = self.build(None, **kwargs)
+        self.pretrained_embeddings = None
+        if pretrained_embeddings is not None:
+            self.pretrained_embeddings = utils.create_embedding_matrix(
+                utils.load_pretrained_embeddings(pretrained_embeddings)
+            )
 
+        self._bidirLSTM = self.build(None, **kwargs)
         self.hyperparameters = read_yaml(config.HYPERPARAMETERS_PATH.format(repr(self)))
 
     def build(self, hp=None, **kwargs):
@@ -45,21 +55,31 @@ class BidirectionalLSTM(Model, HyperModel):
         return self._build_hp(hp)
 
     def _build_hp(self, hp):
-        embedding_dim = config.EMBEDDING_DIM
         lstm_units_1 = hp.Choice("lstm_units_1", self.hyperparameters["lstm_units_1"])
         lstm_units_2 = hp.Choice("lstm_units_2", self.hyperparameters["lstm_units_2"])
 
         bidirLSTM = K.models.Sequential()
         bidirLSTM.add(K.layers.InputLayer(shape=(None,)))
-        bidirLSTM.add(
-            K.layers.Embedding(
-                input_dim=config.num_words,
-                output_dim=embedding_dim,
-                input_length=config.MAX_SEQ_LENGTH,
-                weights=[config.embedding_matrix],
-                trainable=False,
+
+        if self.pretrained_embeddings is not None:
+            bidirLSTM.add(
+                K.layers.Embedding(
+                    input_dim=config.num_words,
+                    output_dim=config.EMBEDDING_DIM,
+                    input_length=config.MAX_SEQ_LENGTH,
+                    weights=[self.pretrained_embeddings],
+                    trainable=False,
+                )
             )
-        )
+        else:
+            bidirLSTM.add(
+                K.layers.Embedding(
+                    input_dim=config.num_words,
+                    output_dim=config.EMBEDDING_DIM,
+                    input_length=config.MAX_SEQ_LENGTH,
+                )
+            )
+
         bidirLSTM.add(
             K.layers.Bidirectional(
                 K.layers.LSTM(
@@ -104,18 +124,15 @@ class BidirectionalLSTM(Model, HyperModel):
 
     def _build_fixed(self, **kwargs):
 
-        vocab_size = kwargs.get("vocab_size", 10000)
-        embedding_dim = kwargs.get("embedding_dim", 16)
-        max_sequence_length = kwargs.get("max_sequence_length", 100)
         lstm_units = kwargs.get("lstm_units", 32)
 
         bidirLSTM = K.models.Sequential()
         bidirLSTM.add(K.layers.InputLayer(shape=(None,)))
         bidirLSTM.add(
             K.layers.Embedding(
-                input_dim=vocab_size,
-                output_dim=embedding_dim,
-                input_length=max_sequence_length,
+                input_dim=config.num_words,
+                output_dim=config.EMBEDDING_DIM,
+                input_length=config.MAX_SEQ_LENGTH,
             )
         )
         bidirLSTM.add(
@@ -217,7 +234,8 @@ class BidirectionalLSTM(Model, HyperModel):
             max_trials=n_iter,
             executions_per_trial=1,
             directory=config.RESULTS_DIRECTORY.format(repr(self)),
-            project_name=f'grid{datetime.now().strftime("%d_%m_t%H:%M")}',
+            # project_name=f'grid{datetime.now().strftime("%d_%m_t%H:%M")}',
+            project_name=repr(self),
         )
         tuner.search(
             x_train, y_train, callbacks=callbacks, validation_data=(x_val, y_val)
@@ -243,7 +261,9 @@ class BidirectionalLSTM(Model, HyperModel):
         :param data: the data to predict
         :return: the predicted values
         """
-        return self._bidirLSTM.predict(data)
+        y_pred = self._bidirLSTM.predict(data)
+        classes = np.argmax(y_pred, axis=1)
+        return np.vectorize(config.id_to_category.get)(classes).astype(object)
 
     def save_model(self):
         """

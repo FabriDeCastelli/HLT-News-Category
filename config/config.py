@@ -49,11 +49,12 @@ new_names = ["Life", "Entertainment", "Voices", "Sports", "Politics"]
 drop_column = ["link", "authors", "date"]
 merged_categories = [life, entertainment, voices, sports, politics]
 rename_y = {"Entertainment": 0, "Life": 1, "Politics": 2, "Sport": 3, "Voices": 4}
+id_to_category = {0: "Entertainment", 1: "Life", 2: "Politics", 3: "Sport", 4: "Voices"}
 
 # PRETRAINED EMBEDDINGS
-glove_file = "glove.6B.300d.txt"
-google_file = "GoogleNews-vectors-negative300.bin"
-fastText_file = "wiki-news-300d-1M-subword.vec"
+glove_file = os.path.join(EMBEDDINGS_PATH, "glove.6B.300d.txt")
+google_file = os.path.join(EMBEDDINGS_PATH, "GoogleNews-vectors-negative300.bin")
+fastText_file = os.path.join(EMBEDDINGS_PATH, "wiki-news-300d-1M-subword.vec")
 
 # PIPELINE STUFF
 nltk.download("stopwords", quiet=True)

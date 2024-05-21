@@ -1,6 +1,8 @@
 """ This module contains utility functions for the project. """
 
-import os.path
+import os
+import pickle
+
 import numpy as np
 import pandas as pd
 import yaml
@@ -156,47 +158,65 @@ def split_train_val_test(
     return x_train, x_val, x_test, y_train, y_val, y_test
 
 
-def load_pretrained_embedddings(embedding_path, embedding):
+def load_pretrained_embeddings(embedding):
     """
     Load the pretrained embeddings from the given path.
 
-    :param embedding_path: The path to the pretrained embeddings.
     :param embedding: The type of the embedding.
     :return: The pretrained embeddings.
     """
     if embedding == "google":
-        return KeyedVectors.load_word2vec_format(embedding_path, binary=True)
+        return KeyedVectors.load_word2vec_format(config.google_file, binary=True)
     elif embedding == "fastText":
-        return KeyedVectors.load_word2vec_format(embedding_path)
+        return KeyedVectors.load_word2vec_format(config.fastText_file)
     elif embedding == "glove":
         glove_embeddings = {}
-        with open(embedding_path) as f:
+        with open(config.glove_file) as f:
             for line in f:
                 word, coefs = line.split(maxsplit=1)
                 coefs = np.fromstring(coefs, "f", sep=" ")
                 glove_embeddings[word] = coefs
         return glove_embeddings
+    raise ValueError(f"Embedding {embedding} is not supported.")
 
 
 def create_embedding_matrix(pretrained_embeddings):
     """
     Create the embedding matrix from the word embeddings.
-    :param word_index: The word index.
+
     :param pretrained_embeddings: The pretrained embeddings.
     :return: The embedding matrix.
     """
-    find = 0
-    not_find = 0
-    unmached_words = []
-    config.embedding_matrix = np.zeros((config.num_words, config.EMBEDDING_DIM))
-    for word, i in config.word_index.items():
+
+    path = os.path.join(config.PIPELINE_DATASET_PATH, "word_index.pkl")
+    word_index = pickle.load(open(path, "rb"))
+
+    embedding_matrix = np.zeros((config.num_words, config.EMBEDDING_DIM))
+    for word, i in word_index.items():
         if word in pretrained_embeddings:
-            embedding_vector = pretrained_embeddings[word]
-            config.embedding_matrix[i] = embedding_vector
-            find += 1
+            embedding_matrix[i] = pretrained_embeddings[word]
         else:
-            config.embedding_matrix[i] = np.random.normal(0, 1, config.EMBEDDING_DIM)
-            not_find += 1
-            if word not in unmached_words:
-                unmached_words.append(word)
-    return find / (find + not_find), unmached_words
+            embedding_matrix[i] = np.random.normal(0, 1, config.EMBEDDING_DIM)
+    return embedding_matrix
+
+
+def embedding_matrix_statistics(pretrained_embeddings):
+    """
+    Get the statistics of the embedding matrix.
+
+    :param pretrained_embeddings: The pretrained embeddings.
+    :return: The statistics of the embedding matrix.
+    """
+    found = 0
+    not_found = 0
+    unmatched_words = []
+    path = os.path.join(config.PIPELINE_DATASET_PATH, "word_index.pkl")
+    word_index = pickle.load(open(path, "rb"))
+    for word, i in word_index.items():
+        if word in pretrained_embeddings:
+            found += 1
+        else:
+            not_found += 1
+            if word not in unmatched_words:
+                unmatched_words.append(word)
+    return found / (found + not_found), unmatched_words

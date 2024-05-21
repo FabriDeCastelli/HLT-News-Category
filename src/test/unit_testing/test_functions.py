@@ -46,9 +46,6 @@ class TestFunctions(unittest.TestCase):
     def test_keras_tokenizer_config_update(self):
         corpus = ["I am an apple", "I am a banana"]
         tokenizer = functions.tokenize(corpus)
-        self.assertEqual(
-            config.word_index["apple"], 4
-        )  # apple is the 4th word in the vocabulary
         self.assertEqual(tokenizer.shape, (len(corpus), config.MAX_SEQ_LENGTH))
         self.assertIsInstance(tokenizer, np.ndarray)
 
