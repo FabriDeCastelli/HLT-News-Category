@@ -1,5 +1,7 @@
 """ Bidirectional LSTM. """
 
+from datetime import datetime
+
 import keras as K
 import keras_tuner as kt
 
@@ -190,17 +192,16 @@ class BidirectionalLSTM(Model, HyperModel):
         y_val,
         callbacks=None,
         n_iter=30,
-        refit=True,
     ):
         """
         Performs some hyperparameters' optimization, using kera-tuner's RandomSearch.
 
         :param x_train: the training data
         :param y_train: the target values
+        :param x_val: the validation data
+        :param y_val: the validation target values
         :param callbacks: the callbacks to use during training
-        :param validation_split: the validation split
         :param n_iter: the number of iterations to run the Randomized Search
-        :param refit: whether to refit the model on the best hyperparameters
         :return: the list of best hyperparameters in Hyperparameters format
         """
         assert isinstance(
@@ -216,23 +217,13 @@ class BidirectionalLSTM(Model, HyperModel):
             max_trials=n_iter,
             executions_per_trial=1,
             directory=config.RESULTS_DIRECTORY.format(repr(self)),
-            project_name=repr(self),
+            project_name=f'grid{datetime.now().strftime("%d_%m_t%H:%M")}',
         )
         tuner.search(
             x_train, y_train, callbacks=callbacks, validation_data=(x_val, y_val)
         )
         best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
-        self.bidirLSTM = tuner.hypermodel.build(best_hps)
         self.bidirLSTM = tuner.get_best_models(num_models=1)[0]
-
-        if refit:
-            self.fit(
-                x=x_train,
-                y=y_train,
-                callbacks=callbacks,
-                validation_data=(x_val, y_val)
-            )
-
         return best_hps
 
     def evaluate(self, inputs, targets):
