@@ -108,6 +108,7 @@ class Pipeline:
         for column in data.columns:
 
             for function_chunk in self.stages:
+
                 if self.parallel_execution_mode:
                     chunk_size = len(data[column]) // cpu_count
                     chunks = [
@@ -121,7 +122,10 @@ class Pipeline:
                         result for chunk in results[column] for result in chunk
                     ]
                 else:
-                    results[column] = run_whole(function_chunk, data[column])
+                    if column not in results:
+                        results[column] = run_whole(function_chunk, data[column])
+                    else:
+                        results[column] = run_whole(function_chunk, results[column])
 
                 self.switch_parallel_execution_mode()
 

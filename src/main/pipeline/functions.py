@@ -32,16 +32,20 @@ def clean_text(corpus, parallel_mode=True) -> str:
     text = normalize("NFKD", text).encode("ascii", "ignore")
     return text
 
-def remove_contractions(corpus, parallel_mode=True) -> str:
+
+def remove_contractions(corpus, parallel_mode=False) -> str:
     """
     Remove contracted form from corpus
 
     :param corpus: the sentence to remove contractions from
     :return: the cleaned sentence
     """
-    words = corpus.split()
-    filtered_words = [contractions.fix(word)for word in words]
-    return ' '.join(filtered_words)
+    if isinstance(corpus, bytes):
+        corpus = corpus.decode("utf-8")
+    words = corpus.split(" ")
+    filtered_words = [contractions.fix(word) for word in words]
+    return " ".join(filtered_words)
+
 
 def stop_words_removal(corpus, parallel_mode=True) -> str:
     """
