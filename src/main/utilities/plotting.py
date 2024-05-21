@@ -12,7 +12,7 @@ from sklearn.metrics import (
 
 def plot_confusion_matrix(y_test, y_pred, path=None):
     """
-    plot the confusion matrix.
+    Plots the confusion matrix. If path is None the plot is shown, otherwise it is saved in the path.
 
     :param y_test: real target values
     :param y_pred: the predicted values
@@ -40,6 +40,9 @@ def plot_confusion_matrix(y_test, y_pred, path=None):
     if path is not None:
         plt.savefig(path)
     plt.show()
+
+
+# Deprecated? -------
 
 
 def compute_performance(y_test, y_pred):

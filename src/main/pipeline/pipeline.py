@@ -49,9 +49,7 @@ class Pipeline:
 
     def execute(self, data: pd.DataFrame, model_file=None, save=False):
         """
-        Run the pipeline in parallel.
-        The pipeline is run in parallel by splitting the data into chunks and running
-        the pipeline on each chunk in parallel.
+        The pipeline is run in parallel by splitting the data into chunks and executing the functions on each chunk.
         The number of chunks is equal to the number of cpu's available.
         The results are flattened and returned.
 

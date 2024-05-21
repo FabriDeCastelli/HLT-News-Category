@@ -83,7 +83,11 @@ class Model(ABC):
 
     def save_results(self, x_test, y_test):
         """
-        Save the results.
+        Saves the result of the model predictions in config.RESULTS_DIRECTORY/{name of the class}.
+        The confusion matrix and classification report are saved.
+
+        :param x_test: The test input data.
+        :param y_test: The test target data.
         """
         y_pred = self.predict(x_test)
         report = classification_report(y_test, y_pred)

@@ -55,7 +55,7 @@ class BidirectionalLSTM(Model, HyperModel):
             K.layers.Embedding(
                 input_dim=config.num_words,
                 output_dim=embedding_dim,
-                input_length=config.MAX_SEQ_LENGHT,
+                input_length=config.MAX_SEQ_LENGTH,
                 weights=[config.embedding_matrix],
                 trainable=False,
             )
