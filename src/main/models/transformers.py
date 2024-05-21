@@ -1,18 +1,18 @@
-"""RoBERTa model"""
+"""General transformers model"""
 from src.main.models.model import Model
 from src.main.pipeline.pipeline import Pipeline
 from typing import Callable, List
 import pandas as pd
 
 
-class RoBERTa():
+class Transformer():
     """
-    RoBERTa class.
+    General transformers class.
     """
 
     def __init__(self):
         """
-        Constructor for the RoBERTa class.
+        Constructor for the general transformers class.
         """
         self._pipeline = None
 
