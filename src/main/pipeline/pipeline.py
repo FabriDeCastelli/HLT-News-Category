@@ -107,13 +107,15 @@ class Pipeline:
 
         for column in data.columns:
 
+            results[column] = data[column]
+
             for function_chunk in self.stages:
 
                 if self.parallel_execution_mode:
-                    chunk_size = len(data[column]) // cpu_count
+                    chunk_size = len(results[column]) // cpu_count
                     chunks = [
-                        data[column][i : i + chunk_size]
-                        for i in range(0, len(data[column]), chunk_size)
+                        results[column][i : i + chunk_size]
+                        for i in range(0, len(results[column]), chunk_size)
                     ]
                     results[column] = Parallel(n_jobs=cpu_count)(
                         delayed(run_chunk)(function_chunk, chunk) for chunk in chunks
@@ -122,10 +124,7 @@ class Pipeline:
                         result for chunk in results[column] for result in chunk
                     ]
                 else:
-                    if column not in results:
-                        results[column] = run_whole(function_chunk, data[column])
-                    else:
-                        results[column] = run_whole(function_chunk, results[column])
+                    results[column] = run_whole(function_chunk, results[column])
 
                 self.switch_parallel_execution_mode()
 
