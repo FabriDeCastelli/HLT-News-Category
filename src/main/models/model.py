@@ -1,6 +1,5 @@
 """ Model Abstract Class. """
 
-import inspect
 import os
 from abc import ABC, abstractmethod
 from typing import Callable, List
@@ -11,7 +10,7 @@ from sklearn.metrics import classification_report
 
 from config import config
 from config.config import RESULTS_DIRECTORY
-from main.utilities import plotting
+from src.main.utilities import plotting
 
 
 class Model(ABC):

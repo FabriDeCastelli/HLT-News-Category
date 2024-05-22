@@ -1,7 +1,5 @@
 """ Bidirectional LSTM. """
 
-from datetime import datetime
-
 import keras as K
 import keras_tuner as kt
 import numpy as np
@@ -9,7 +7,7 @@ import numpy as np
 from config import config
 from keras_tuner import HyperModel
 
-from main.utilities import utils
+from src.main.utilities import utils
 from src.main.models.model import Model
 from src.main.pipeline.pipeline import Pipeline
 from src.main.utilities.utils import read_yaml
@@ -34,17 +32,13 @@ class BidirectionalLSTM(Model, HyperModel):
         :param model: the K.models.Sequential model, if provided in input **kwargs are ignored
         """
         super().__init__()
+        self.embedding_matrix = None
         self._pipeline = None
         if model is not None:
             self.bidirLSTM = model
             return
 
-        self.pretrained_embeddings = None
-        if pretrained_embeddings is not None:
-            self.pretrained_embeddings = utils.create_embedding_matrix(
-                utils.load_pretrained_embeddings(pretrained_embeddings)
-            )
-
+        self.pretrained_embeddings = pretrained_embeddings
         self._bidirLSTM = self.build(None, **kwargs)
         self.hyperparameters = read_yaml(config.HYPERPARAMETERS_PATH.format(repr(self)))
 
@@ -61,13 +55,13 @@ class BidirectionalLSTM(Model, HyperModel):
         bidirLSTM = K.models.Sequential()
         bidirLSTM.add(K.layers.InputLayer(shape=(None,)))
 
-        if self.pretrained_embeddings is not None:
+        if self.embedding_matrix is not None:
             bidirLSTM.add(
                 K.layers.Embedding(
                     input_dim=config.num_words,
                     output_dim=config.EMBEDDING_DIM,
                     input_length=config.MAX_SEQ_LENGTH,
-                    weights=[self.pretrained_embeddings],
+                    weights=[self.embedding_matrix],
                     trainable=False,
                 )
             )
@@ -128,13 +122,24 @@ class BidirectionalLSTM(Model, HyperModel):
 
         bidirLSTM = K.models.Sequential()
         bidirLSTM.add(K.layers.InputLayer(shape=(None,)))
-        bidirLSTM.add(
-            K.layers.Embedding(
-                input_dim=config.num_words,
-                output_dim=config.EMBEDDING_DIM,
-                input_length=config.MAX_SEQ_LENGTH,
+        if self.embedding_matrix is not None:
+            bidirLSTM.add(
+                K.layers.Embedding(
+                    input_dim=config.num_words,
+                    output_dim=config.EMBEDDING_DIM,
+                    input_length=config.MAX_SEQ_LENGTH,
+                    weights=[self.embedding_matrix],
+                    trainable=False,
+                )
             )
-        )
+        else:
+            bidirLSTM.add(
+                K.layers.Embedding(
+                    input_dim=config.num_words,
+                    output_dim=config.EMBEDDING_DIM,
+                    input_length=config.MAX_SEQ_LENGTH,
+                )
+            )
         bidirLSTM.add(
             K.layers.Bidirectional(
                 K.layers.LSTM(units=lstm_units, return_sequences=True)
@@ -185,7 +190,14 @@ class BidirectionalLSTM(Model, HyperModel):
         """
         super().run_pipeline(data)
         assert self.pipeline is not None, "Cannot run the pipeline: it is not set."
-        return self.pipeline.execute(data, model_file=repr(self) + ".npy", save=save)
+        result = self.pipeline.execute(data, model_file=repr(self) + ".npy", save=save)
+        path = os.path.join(config.PIPELINE_DATASET_PATH, "word_index.pkl")
+        if self.pretrained_embeddings is not None and os.path.isfile(path):
+            print("Creating embedding matrix...")
+            self.embedding_matrix = utils.create_embedding_matrix(
+                utils.load_pretrained_embeddings(self.pretrained_embeddings)
+            )
+        return result
 
     def fit(self, hp=None, model=None, *args, **kwargs) -> K.callbacks.History:
         """
