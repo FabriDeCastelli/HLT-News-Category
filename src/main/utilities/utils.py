@@ -196,7 +196,7 @@ def create_embedding_matrix(pretrained_embeddings):
         if word in pretrained_embeddings:
             embedding_matrix[i] = pretrained_embeddings[word]
         else:
-            embedding_matrix[i] = np.random.normal(0, 1, config.EMBEDDING_DIM)
+            embedding_matrix[i] = np.random.uniform(-1, 1, config.EMBEDDING_DIM)
     return embedding_matrix
 
 
@@ -214,9 +214,11 @@ def embedding_matrix_statistics(pretrained_embeddings):
     word_index = pickle.load(open(path, "rb"))
     for word, i in word_index.items():
         if word in pretrained_embeddings:
-            found += 1
+            if i <= 30_000:
+                found += 1
         else:
-            not_found += 1
+            if i <= 30_000:
+                not_found += 1
             if word not in unmatched_words:
                 unmatched_words.append(word)
     return found / (found + not_found), unmatched_words
