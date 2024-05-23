@@ -10,10 +10,25 @@ import config.config as config
 class TestFunctions(unittest.TestCase):
 
     # region Parallelizable functions
-    def test_clean_text2(self):
+    def test_clean_text(self):
         string = "I 'This' is. a test's. Pippo: > plito mario\u2014mario"
         result = functions.clean_text(string)
-        expected = "i this is a test's pippo  plito mariomario"
+        expected = "i  this  is  a test s  pippo   plito mariomario"
+        self.assertEqual(result, expected)
+
+        string = "I This' is. a test's. Pippo: > plito mario\u2014mario"
+        result = functions.clean_text(string)
+        expected = "i this  is  a test s  pippo   plito mariomario"
+        self.assertEqual(result, expected)
+
+        string = "I 'This is. a test's. Pippo: > plito mario\u2014mario"
+        result = functions.clean_text(string)
+        expected = "i  this is  a test s  pippo   plito mariomario"
+        self.assertEqual(result, expected)
+
+        string = "I am so-_happy"
+        result = functions.clean_text(string)
+        expected = "i am so  happy"
         self.assertEqual(result, expected)
 
     def test_contractions(self):
@@ -40,6 +55,16 @@ class TestFunctions(unittest.TestCase):
         expected = "i am an appl"
         self.assertEqual(result, expected)
 
+    def test_unify_numbers(self):
+        string = "I have 3 apples and 2 bananas"
+        result = functions.unify_numbers(string)
+        expected = "I have [NUM] apples and [NUM] bananas"
+        self.assertEqual(result, expected)
+        string = "I have 3 apples and 2 bananas01"
+        result = functions.unify_numbers(string)
+        expected = "I have [NUM] apples and [NUM] bananas01"
+        self.assertEqual(result, expected)
+
     # endregion
 
     # region Non-parallelizable functions: only return types and shapes are tested
@@ -58,3 +83,5 @@ class TestFunctions(unittest.TestCase):
         corpus = ["I am an apple", "I am a banana"]
         vectorizer = functions.count_vectorizer(corpus)
         self.assertIsInstance(vectorizer, scipy.sparse.csr_matrix)
+
+    # endregion

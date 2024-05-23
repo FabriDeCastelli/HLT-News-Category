@@ -68,13 +68,15 @@ def clean(df, merge=True):
     return df
 
 
-def get_dataset(filepath=config.DATASET_PATH, one_hot=False):
+def get_dataset(
+    filepath=config.DATASET_PATH, one_hot=False
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Read the dataset from the given filepath and return the dataframe.
 
     :param one_hot: A boolean indicating whether to one hot encode the labels.
     :param filepath: The path to the dataset file.
-    :return: The dataframe containing the dataset.
+    :return: Inputs and targets
     """
     df = pd.read_json(filepath, lines=True)
     df = label_renaming(df)
@@ -83,7 +85,7 @@ def get_dataset(filepath=config.DATASET_PATH, one_hot=False):
     targets = df["category"]
     if one_hot:
         targets = pd.get_dummies(targets)
-    return df.drop(columns=["category"]), targets
+    return df.drop(columns=["category"]).to_numpy(), targets.to_numpy()
 
 
 def load_preprocessing(model_file):
@@ -195,8 +197,10 @@ def create_embedding_matrix(pretrained_embeddings):
     for word, i in word_index.items():
         if word in pretrained_embeddings:
             embedding_matrix[i] = pretrained_embeddings[word]
-        else:
-            embedding_matrix[i] = np.random.uniform(-1, 1, config.EMBEDDING_DIM)
+        elif word == "[UNK]":
+            embedding_matrix[i] = np.zeros(config.EMBEDDING_DIM)
+        elif word == "[NUM]":
+            embedding_matrix[i] = np.ones(config.EMBEDDING_DIM)
     return embedding_matrix
 
 
@@ -214,10 +218,10 @@ def embedding_matrix_statistics(pretrained_embeddings):
     word_index = pickle.load(open(path, "rb"))
     for word, i in word_index.items():
         if word in pretrained_embeddings:
-            if i <= 30_000:
+            if i <= 1e9:
                 found += 1
         else:
-            if i <= 30_000:
+            if i <= 1e9:
                 not_found += 1
             if word not in unmatched_words:
                 unmatched_words.append(word)

@@ -118,7 +118,12 @@ class BidirectionalLSTM(Model, HyperModel):
 
     def _build_fixed(self, **kwargs):
 
-        lstm_units = kwargs.get("lstm_units", 32)
+        lstm_units_1 = kwargs.get("lstm_units_1", 105)
+        lstm_units_2 = kwargs.get("lstm_units_2", 42)
+        dropout1 = kwargs.get("dropout1", 0.3)
+        dropout2 = kwargs.get("dropout2", 0.15)
+        dense_1 = kwargs.get("dense1", 50)
+        dense_2 = kwargs.get("dense2", 17)
 
         bidirLSTM = K.models.Sequential()
         bidirLSTM.add(K.layers.InputLayer(shape=(None,)))
@@ -142,13 +147,23 @@ class BidirectionalLSTM(Model, HyperModel):
             )
         bidirLSTM.add(
             K.layers.Bidirectional(
-                K.layers.LSTM(units=lstm_units, return_sequences=True)
+                K.layers.LSTM(
+                    units=lstm_units_1, return_sequences=True, dropout=dropout1
+                )
             )
         )
-        bidirLSTM.add(K.layers.Bidirectional(K.layers.LSTM(units=lstm_units)))
+        bidirLSTM.add(
+            K.layers.Bidirectional(K.layers.LSTM(units=lstm_units_2, dropout=dropout2))
+        )
+
+        bidirLSTM.add(K.layers.Dense(dense_1, activation="relu"))
+        bidirLSTM.add(K.layers.Dense(dense_2, activation="relu"))
         bidirLSTM.add(K.layers.Dense(units=5, activation="softmax"))
+
+        optimizer = optimizers.Adam(learning_rate=0.01)
+
         bidirLSTM.compile(
-            loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"]
+            loss="categorical_crossentropy", optimizer=optimizer, metrics=["accuracy"]
         )
 
         self.bidirLSTM = bidirLSTM
@@ -188,7 +203,6 @@ class BidirectionalLSTM(Model, HyperModel):
         :param save: a boolean indicating whether to save the data to a file.
         :return: the data after the processing.
         """
-        super().run_pipeline(data)
         assert self.pipeline is not None, "Cannot run the pipeline: it is not set."
         result = self.pipeline.execute(data, model_file=repr(self) + ".npy", save=save)
         path = os.path.join(config.PIPELINE_DATASET_PATH, "word_index.pkl")
@@ -289,7 +303,9 @@ class BidirectionalLSTM(Model, HyperModel):
     @classmethod
     def load_model(cls):
         """
-        Load the model from a file.
+        Load the model from a file. I path is None it loads the weights from the default model location.
+
+        :return: the model
         """
         path = os.path.join(config.MODELS_PATH, cls.__name__ + ".keras")
         assert os.path.isfile(

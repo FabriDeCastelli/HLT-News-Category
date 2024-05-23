@@ -41,7 +41,7 @@ class Model(ABC):
 
         :param data: The data to run the pipeline on.
         """
-        assert isinstance(data, pd.DataFrame), "Data is not a pandas DataFrame."
+        raise NotImplementedError()
 
     def summary(self):
         """

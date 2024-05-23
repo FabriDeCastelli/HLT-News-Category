@@ -44,11 +44,11 @@ def clean_text(text: str, parallel_mode=True) -> str:
     pattern = r"\(PHOTOS\) | \(VIDEO\ | \(VIDEO, PHOTOS\) | \(PHOTOS, VIDEO\)"
     text = re.sub(pattern, "", text)
     # remove punctuation
-    text = re.sub(r"[.,;:!?^#\"]", "", text)
+    text = re.sub(r"[.,;:\-_!?^#\"]", " ", text)
     # remove angle brackets
     text = re.sub(r"[<>]", "", text)
-    # remove ' in the text
-    text = re.sub(r"'(\w+)'", r"\1", text)
+    # remove ' in the text and substitute with a space
+    text = re.sub(r"'", " ", text)
     # remove newlines
     text = re.sub("\n", "", text)
     # remove special characters (example \u2014)
@@ -119,10 +119,24 @@ def stemming(text: str, parallel_mode=True) -> str:
     return res
 
 
+def unify_numbers(text: str, parallel_mode=True) -> str:
+    """
+    Unify all numbers in the text to a single token.
+    Example: "I have 2 apples and 3 bananas" -> "I have NUM apples and NUM bananas"
+
+    :param text: The text to unify the numbers in, as a string.
+    :param parallel_mode: Default is True, ignored
+    :return: The text with the numbers unified, as a string.
+    """
+    return re.sub(r"\b\d+\b", config.numbers_token, text)
+
+
 # endregion
 
 
 # region Not parallelizable functions
+
+
 def tokenize(corpus: List[str], parallel_mode=False) -> np.ndarray:
     """
     Tokenize the corpus using the Tokenizer from keras. After the tokenization, the word_index and num_words are updated
@@ -130,7 +144,7 @@ def tokenize(corpus: List[str], parallel_mode=False) -> np.ndarray:
     See https://keras.io/api/keras_nlp/base_classes/tokenizer/ for more information.
     Example: ["I am a test", "This is another test"] -> [[1, 2, 3, 4], [5, 6, 7, 4]]
 
-    :param corpus: The list of strings to tokenize.
+    :param corpus: A numpy array of strings to tokenize.
     :param parallel_mode: Default is False, ignored
     :return: Tokenization and padding of the corpus in a numpy array.
     """

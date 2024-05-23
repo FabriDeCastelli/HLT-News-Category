@@ -1,5 +1,7 @@
 """ Pipeline module. """
 
+import numpy as np
+
 from config.config import PIPELINE_DATASET_PATH
 from datetime import datetime
 from itertools import groupby
@@ -47,7 +49,7 @@ class Pipeline:
     def switch_parallel_execution_mode(self):
         self.parallel_execution_mode = not self.parallel_execution_mode
 
-    def execute(self, data: pd.DataFrame, model_file=None, save=False):
+    def execute(self, data: np.ndarray, model_file=None, save=False):
         """
         The pipeline is run in parallel by splitting the data into chunks and executing the functions on each chunk.
         The number of chunks is equal to the number of cpu's available.
@@ -60,7 +62,7 @@ class Pipeline:
         """
 
         assert len(self.stages) > 0, "Pipeline has no steps."
-        assert isinstance(data, pd.DataFrame), "Data is not a pandas DataFrame."
+        assert isinstance(data, np.ndarray), "Data is not a numpy array."
         assert not save or model_file is not None, "Model is not provided."
 
         def run_chunk(functions_chunk, data_chunk):
@@ -71,14 +73,11 @@ class Pipeline:
             :param data_chunk: The data to run the functions on.
             :return: The chunk after the processing.
             """
-            return list(
-                map(
-                    lambda item: reduce(
-                        lambda previous, step: step(previous), functions_chunk, item
-                    ),
-                    data_chunk,
+            return np.vectorize(
+                lambda item: reduce(
+                    lambda previous, step: step(previous), functions_chunk, item
                 )
-            )
+            )(data_chunk)
 
         def run_whole(functions_chunk, full_data):
             """
@@ -99,36 +98,27 @@ class Pipeline:
             return utils.load_preprocessing(model_file)
 
         cpu_count = os.cpu_count()
-        results = {}
+        results = data
 
         now = datetime.now()
+        print(f"Pipeline started")
 
-        for column in data.columns:
+        for function_chunk in self.stages:
 
-            results[column] = data[column]
+            if self.parallel_execution_mode:
+                chunks = [chunk for chunk in np.array_split(results, cpu_count)]
+                results = Parallel(n_jobs=cpu_count)(
+                    delayed(run_chunk)(function_chunk, chunk) for chunk in chunks
+                )
+                results = np.concatenate(results, axis=0)
+            else:
+                results = run_whole(function_chunk, results.flatten().tolist())
 
-            for function_chunk in self.stages:
-
-                if self.parallel_execution_mode:
-                    chunk_size = len(results[column]) // cpu_count
-                    chunks = [
-                        results[column][i : i + chunk_size]
-                        for i in range(0, len(results[column]), chunk_size)
-                    ]
-                    results[column] = Parallel(n_jobs=cpu_count)(
-                        delayed(run_chunk)(function_chunk, chunk) for chunk in chunks
-                    )
-                    results[column] = [
-                        result for chunk in results[column] for result in chunk
-                    ]
-                else:
-                    results[column] = run_whole(function_chunk, results[column])
-
-                self.switch_parallel_execution_mode()
+            self.switch_parallel_execution_mode()
 
         print(f"Pipeline execution time: {datetime.now() - now}")
 
         if save and model_file is not None:
             utils.save_preprocessing(results, model_file)
 
-        return results["full_article"]
+        return np.array(results).reshape(-1)  # remove the last dimension
