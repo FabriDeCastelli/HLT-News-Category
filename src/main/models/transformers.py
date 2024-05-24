@@ -1,6 +1,11 @@
 """General transformers model"""
 
+import os
+
 import numpy as np
+from sklearn.metrics import classification_report
+
+from src.main.utilities import plotting
 from src.main.models.model import Model
 from src.main.pipeline.pipeline import Pipeline
 from typing import Callable, List
@@ -45,20 +50,7 @@ class Transformer(Model):
             "f1": load_metric("f1"),
         }
         self.trainer = None
-        self.train_dataset = None
-        self.eval_dataset = None
-        self.test_dataset = None
-        self.build(**training_args)
-
-    def build(self, **params):
-        training_args = TrainingArguments(**params)
-        self.trainer = Trainer(
-            model=self.model,
-            args=training_args,
-            train_dataset=self.train_dataset,
-            eval_dataset=self.eval_dataset,
-            compute_metrics=self.compute_metrics,
-        )
+        self.parameters = training_args
 
     @property
     def pipeline(self):
@@ -109,16 +101,19 @@ class Transformer(Model):
             "f1": f1["f1"],
         }
 
-    def prepare_dataset(self, x_train, y_train, x_val, y_val):
+    def prepare_dataset(self, x_train, y_train, x_val, y_val, x_test, y_test):
 
         train_data = {"text": x_train, "label": y_train}
         val_data = {"text": x_val, "label": y_val}
+        test_data = {"text": x_test, "label": y_test}
 
         train_dataset = Dataset.from_dict(train_data)
         val_dataset = Dataset.from_dict(val_data)
+        test_dataset = Dataset.from_dict(test_data)
 
         train_dataset = train_dataset.map(self.tokenize_function, batched=True)
         val_dataset = val_dataset.map(self.tokenize_function, batched=True)
+        test_dataset = test_dataset.map(self.tokenize_function, batched=True)
 
         train_dataset.set_format(
             type="torch", columns=["input_ids", "attention_mask", "label"]
@@ -126,23 +121,25 @@ class Transformer(Model):
         val_dataset.set_format(
             type="torch", columns=["input_ids", "attention_mask", "label"]
         )
-
-        self.train_dataset = train_dataset
-        self.eval_dataset = val_dataset
-
-    def prepare_test_dataset(self, x_test, y_test):
-        test_data = {"text": x_test, "label": y_test}
-        test_dataset = Dataset.from_dict(test_data)
-        test_dataset = test_dataset.map(self.tokenize_function, batched=True)
         test_dataset.set_format(
             type="torch", columns=["input_ids", "attention_mask", "label"]
         )
-        return test_dataset
+
+        return train_dataset, val_dataset, test_dataset
 
     def tokenize_function(self, batch):
         return self.tokenizer(batch["text"], truncation=True, max_length=512)
 
-    def fit(self, x_train, y_train):
+    def fit(self, train, val):
+        training_args = TrainingArguments(**self.parameters)
+        self.trainer = Trainer(
+            model=self.model,
+            args=training_args,
+            train_dataset=train,
+            eval_dataset=val,
+            data_collator=self.data_collator,
+            compute_metrics=self.compute_metrics,
+        )
         self.trainer.train()
 
     def predict(self, test_dataset):
@@ -158,8 +155,18 @@ class Transformer(Model):
         pass
 
     def save_results(self, test_data, **kwargs):
-        predictions, targets = self.predict(test_data)
-        super().save_results(predictions, targets)
+        result = self.predict(test_data)
+        predictions = np.argmax(result[0], axis=1)
+        targets = result[1]
+        report = classification_report(targets, predictions)
+        directory = config.RESULTS_DIRECTORY.format(repr(self))
+        os.makedirs(directory, exist_ok=True)
+        path = os.path.join(directory, "metrics.txt")
+        with open(path, "w") as file:
+            file.write(report)
+        plotting.plot_confusion_matrix(
+            targets, predictions, path=os.path.join(directory, "confusion_matrix.png")
+        )
 
     def __repr__(self):
         return self.checkpoint

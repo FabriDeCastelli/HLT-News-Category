@@ -390,11 +390,10 @@ class BidirectionalLSTM(Model, HyperModel):
             hyperparameters = trial_data["hyperparameters"]["values"]
             score = trial_data["score"]
 
-            top_5.append((hyperparameters, score))
+            if score is not None:
+                top_5.append((hyperparameters, score))
 
-        top_5 = sorted(top_5, key=lambda x: x[1], reverse=True)[:n]
-
-        return top_5
+        return sorted(top_5, key=lambda x: x[1], reverse=True)[:n]
 
     def summary(self):
         """
