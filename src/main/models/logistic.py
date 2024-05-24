@@ -6,14 +6,14 @@ from config.config import MODELS_PATH, HYPERPARAMETERS_PATH
 from src.main.utilities.utils import read_yaml
 
 import os
-import warnings
 from typing import Callable, List
 
 import pandas as pd
+import numpy as np
 import joblib
 
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import RandomizedSearchCV, PredefinedSplit
+from sklearn.model_selection import RandomizedSearchCV
 
 
 class Logistic(Model):
@@ -72,7 +72,10 @@ class Logistic(Model):
         :return: the data after the processing.
         """
         assert self.pipeline is not None, "Cannot run the pipeline: it is not set."
-        return self.pipeline.execute(data, model_file=repr(self) + ".npz", save=save)
+        result = self.pipeline.execute(data, model_file=repr(self) + ".npz", save=save)
+        if isinstance(result, np.ndarray) and result.shape[0] == 1:
+            return result[0]
+        return result
 
     def fit(self, inputs, targets, sample_weight=None):
         """
@@ -93,8 +96,6 @@ class Logistic(Model):
 
         :param x_train: the training data
         :param y_train: the target values
-        :param x_val: the validation data
-        :param y_val: the target values for the validation data
         :param n_iter: the number of iterations to run the Randomized Search
         :return: the cross validation results
         """

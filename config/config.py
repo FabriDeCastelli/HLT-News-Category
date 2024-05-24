@@ -1,8 +1,6 @@
 """ Configuration file for the project. """
 
 import os
-import numpy as np
-
 import nltk
 from nltk.corpus import stopwords
 import spacy
@@ -37,7 +35,7 @@ MODELS_PATH = os.path.join(PROJECT_FOLDER_PATH, "models")
 PIPELINE_DATASET_PATH = os.path.join(PROJECT_FOLDER_PATH, "dataset", "preprocessing")
 
 # TENSORBOARD PATH
-TENSORBOARD_LOGS = os.path.join(PROJECT_FOLDER_PATH, "logs", "{}")
+LOGS_PATH = os.path.join(PROJECT_FOLDER_PATH, "logs", "{}")
 
 # RENAME CATEGORIES
 life = ["WELLNESS", "TRAVEL", "STYLE & BEAUTY", "FOOD & DRINK"]
@@ -48,8 +46,9 @@ politics = ["POLITICS"]
 new_names = ["Life", "Entertainment", "Voices", "Sports", "Politics"]
 drop_column = ["link", "authors", "date"]
 merged_categories = [life, entertainment, voices, sports, politics]
-rename_y = {"Entertainment": 0, "Life": 1, "Politics": 2, "Sport": 3, "Voices": 4}
-id_to_category = {0: "Entertainment", 1: "Life", 2: "Politics", 3: "Sport", 4: "Voices"}
+label2id = {"Politics": 0, "Voices": 1, "Sports": 2, "Entertainment": 3, "Life": 4}
+id2label = {int(v): str(k) for k, v in label2id.items()}
+
 
 # PRETRAINED EMBEDDINGS
 glove_file = os.path.join(EMBEDDINGS_PATH, "glove.6B.300d.txt")

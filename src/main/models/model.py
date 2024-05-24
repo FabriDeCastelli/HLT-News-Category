@@ -5,7 +5,6 @@ from abc import ABC, abstractmethod
 from typing import Callable, List
 
 import numpy as np
-import pandas as pd
 from sklearn.metrics import classification_report
 
 from config import config
@@ -92,7 +91,7 @@ class Model(ABC):
         """
         if y_test.ndim == 2:
             y_test = y_test.to_numpy().argmax(axis=1)
-            y_test = np.vectorize(config.id_to_category.get)(y_test)
+            y_test = np.vectorize(config.id2label.get)(y_test)
         y_pred = self.predict(x_test)
         report = classification_report(y_test, y_pred)
         directory = RESULTS_DIRECTORY.format(repr(self))

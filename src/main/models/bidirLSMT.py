@@ -1,5 +1,7 @@
 """ Bidirectional LSTM. """
 
+import json
+
 import keras as K
 import keras_tuner as kt
 import numpy as np
@@ -10,7 +12,7 @@ from keras_tuner import HyperModel
 from src.main.utilities import utils
 from src.main.models.model import Model
 from src.main.pipeline.pipeline import Pipeline
-from src.main.utilities.utils import read_yaml
+from src.main.utilities.utils import read_yaml, f1_macro, precision_macro, recall_macro
 from typing import Callable, List
 from keras import optimizers
 
@@ -38,6 +40,12 @@ class BidirectionalLSTM(Model, HyperModel):
             self.bidirLSTM = model
             return
 
+        self.metrics = [
+            "accuracy",
+            f1_macro,
+            precision_macro,
+            recall_macro,
+        ]
         self.pretrained_embeddings = pretrained_embeddings
         self._bidirLSTM = self.build(None, **kwargs)
         self.hyperparameters = read_yaml(config.HYPERPARAMETERS_PATH.format(repr(self)))
@@ -110,9 +118,7 @@ class BidirectionalLSTM(Model, HyperModel):
             )
         )
 
-        bidirLSTM.compile(
-            loss="categorical_crossentropy", optimizer=optimizer, metrics=["accuracy"]
-        )
+        bidirLSTM.compile(optimizer, "categorical_crossentropy", metrics=self.metrics)
 
         return bidirLSTM
 
@@ -162,9 +168,7 @@ class BidirectionalLSTM(Model, HyperModel):
 
         optimizer = optimizers.Adam(learning_rate=0.01)
 
-        bidirLSTM.compile(
-            loss="categorical_crossentropy", optimizer=optimizer, metrics=["accuracy"]
-        )
+        bidirLSTM.compile(optimizer, "categorical_crossentropy", metrics=self.metrics)
 
         self.bidirLSTM = bidirLSTM
         return bidirLSTM
@@ -256,11 +260,10 @@ class BidirectionalLSTM(Model, HyperModel):
 
         tuner = kt.RandomSearch(
             self,
-            objective="val_accuracy",
+            objective="val_f1_score",
             max_trials=n_iter,
             executions_per_trial=1,
             directory=config.RESULTS_DIRECTORY.format(repr(self)),
-            # project_name=f'grid{datetime.now().strftime("%d_%m_t%H:%M")}',
             project_name=repr(self),
         )
         tuner.search(
@@ -289,7 +292,7 @@ class BidirectionalLSTM(Model, HyperModel):
         """
         y_pred = self._bidirLSTM.predict(data)
         classes = np.argmax(y_pred, axis=1)
-        return np.vectorize(config.id_to_category.get)(classes).astype(object)
+        return np.vectorize(config.id2label.get)(classes).astype(object)
 
     def save_model(self):
         """
@@ -312,6 +315,86 @@ class BidirectionalLSTM(Model, HyperModel):
             path
         ), f"Error: trying to load {cls.__name__} model at unknown path {path}"
         return cls(model=K.saving.load_model(path))
+
+    @classmethod
+    def from_experiment(cls, experiment_name):
+        """
+        Create a BidirectionalLSTM model from an already run experiment.
+
+        :param experiment_name: the name of an already run tuner experiment
+        :return: the BidirectionalLSTM model
+        """
+        experiment_path = os.path.join(
+            config.RESULTS_DIRECTORY.format(cls.__name__), experiment_name
+        )
+
+        trials_dir = os.path.join(experiment_path)
+        trials = os.listdir(trials_dir)
+
+        best_trial = None
+        best_hyperparameters = None
+        best_score = 0
+
+        for trial in trials:
+
+            if os.path.isfile(os.path.join(trials_dir, trial)):
+                continue
+
+            trial_path = os.path.join(trials_dir, trial, "trial.json")
+
+            with open(trial_path, "r") as f:
+                trial_data = json.load(f)
+
+            hyperparameters = trial_data["hyperparameters"]["values"]
+            score = trial_data["score"]
+
+            # save the best score
+            if score > best_score:
+                best_score = score
+                best_hyperparameters = hyperparameters
+                best_trial = trial
+
+        bidirLSTM = cls(**best_hyperparameters)
+        weights_path = os.path.join(trials_dir, best_trial, "checkpoint.weights.h5")
+        bidirLSTM.bidirLSTM.load_weights(weights_path)
+        return bidirLSTM
+
+    @classmethod
+    def get_top_experiments(cls, experiment_name, n=5):
+        """
+        Get the top n trials from a given experiment, in a keras tuner folder.
+
+        :param experiment_name: the name of the experiment
+        :param n: the number of top trials to return
+        :return: the top n trials, according to the metric for which the model selection was run
+        """
+        experiment_path = os.path.join(
+            config.RESULTS_DIRECTORY.format(cls.__name__), experiment_name
+        )
+
+        trials_dir = os.path.join(experiment_path)
+        trials = os.listdir(trials_dir)
+
+        top_5 = []
+
+        for trial in trials:
+
+            if os.path.isfile(os.path.join(trials_dir, trial)):
+                continue
+
+            trial_path = os.path.join(trials_dir, trial, "trial.json")
+
+            with open(trial_path, "r") as f:
+                trial_data = json.load(f)
+
+            hyperparameters = trial_data["hyperparameters"]["values"]
+            score = trial_data["score"]
+
+            top_5.append((hyperparameters, score))
+
+        top_5 = sorted(top_5, key=lambda x: x[1], reverse=True)[:n]
+
+        return top_5
 
     def summary(self):
         """

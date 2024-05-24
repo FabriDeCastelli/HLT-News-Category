@@ -186,17 +186,6 @@ def count_vectorizer(corpus: List[str], parallel_mode=False) -> scipy.sparse.csr
     """
     return config.count_vectorizer.fit_transform(corpus)
 
-def unify_numbers(text: str, parallel_mode=True) -> str:
-    """
-    Unify all numbers in the text to a single token.
-    Example: "I have 2 apples and 3 bananas" -> "I have NUM apples and NUM bananas"
-
-    :param text: The text to unify the numbers in, as a string.
-    :param parallel_mode: Default is True, ignored
-    :return: The text with the numbers unified, as a string.
-    """
-    return re.sub(r"\b\d+\b", config.numbers_token, text)
-
 
 # endregion
 

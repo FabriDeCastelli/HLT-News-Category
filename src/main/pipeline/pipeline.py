@@ -13,7 +13,6 @@ from typing import Callable, List
 
 import inspect
 import os
-import pandas as pd
 
 
 class Pipeline:
@@ -121,4 +120,4 @@ class Pipeline:
         if save and model_file is not None:
             utils.save_preprocessing(results, model_file)
 
-        return np.array(results).reshape(-1)  # remove the last dimension
+        return np.array(results)

@@ -10,6 +10,8 @@ from scipy.sparse import save_npz, load_npz
 from gensim.models import KeyedVectors
 from config import config
 from sklearn.model_selection import train_test_split
+from tensorflow.keras import backend as K
+import tensorflow as tf
 
 
 def save_preprocessing(results, model_file):
@@ -20,7 +22,6 @@ def save_preprocessing(results, model_file):
     :param model_file: The model to save the results for.
     """
     assert model_file is not None, "Model (filepath) is not provided."
-    assert isinstance(results, dict), "Results is not a dictionary."
 
     filepath = os.path.join(config.PIPELINE_DATASET_PATH, model_file)
 
@@ -28,9 +29,9 @@ def save_preprocessing(results, model_file):
         os.makedirs(config.PIPELINE_DATASET_PATH)
 
     if ".npz" in filepath:
-        save_npz(filepath, results["full_article"])
+        save_npz(filepath, results)
     elif ".npy" in filepath:
-        np.save(filepath, results["full_article"], allow_pickle=True)
+        np.save(filepath, results, allow_pickle=True)
     else:
         raise ValueError(f"File extension of {filepath} is not supported for saving.")
 
@@ -226,3 +227,37 @@ def embedding_matrix_statistics(pretrained_embeddings):
             if word not in unmatched_words:
                 unmatched_words.append(word)
     return found / (found + not_found), unmatched_words
+
+
+def precision_macro(y_true, y_pred):
+    y_pred = K.round(y_pred)
+    y_true = K.cast(y_true, "float")
+    y_pred = K.cast(y_pred, "float")
+    tp = K.sum(K.cast(y_true * y_pred, "float"), axis=0)
+    fp = K.sum(K.cast((1 - y_true) * y_pred, "float"), axis=0)
+
+    precision = tp / (tp + fp + K.epsilon())
+    return K.mean(precision)
+
+
+def recall_macro(y_true, y_pred):
+    y_pred = K.round(y_pred)
+    y_true = K.cast(y_true, "float")
+    y_pred = K.cast(y_pred, "float")
+    tp = K.sum(K.cast(y_true * y_pred, "float"), axis=0)
+    fn = K.sum(K.cast(y_true * (1 - y_pred), "float"), axis=0)
+
+    recall = tp / (tp + fn + K.epsilon())
+    return K.mean(recall)
+
+
+def f1_macro(y_true, y_pred):
+    # Calculate precision macro average
+    precision = precision_macro(y_true, y_pred)
+
+    # Calculate recall macro average
+    recall = recall_macro(y_true, y_pred)
+
+    # Calculate F1 macro average
+    f1 = 2 * precision * recall / (precision + recall + K.epsilon())
+    return f1
