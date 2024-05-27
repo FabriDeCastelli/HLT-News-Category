@@ -73,8 +73,8 @@ class Logistic(Model):
         """
         assert self.pipeline is not None, "Cannot run the pipeline: it is not set."
         result = self.pipeline.execute(data, model_file=repr(self) + ".npz", save=save)
-        if isinstance(result, np.ndarray) and result.shape[0] == 1:
-            return result[0]
+        if isinstance(result, np.ndarray) and result.shape == ():
+            return result.item()
         return result
 
     def fit(self, inputs, targets, sample_weight=None):
@@ -104,7 +104,7 @@ class Logistic(Model):
         randomized_search = RandomizedSearchCV(
             estimator=self.logistic,
             param_distributions=self.hyperparameters,
-            refit="f1_macro",
+            scoring="f1_macro",
             n_jobs=-1,
             n_iter=n_iter,
             random_state=42,
