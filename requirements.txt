@@ -5,18 +5,18 @@ mypy
 doc8
 pre-commit
 
-joblib~=1.4.0
+joblib
 
 pandas
 dataprep
 numpy
-matplotlib~=3.8.4
-seaborn~=0.13.2
-pyyaml~=6.0.1
+matplotlib
+seaborn
+pyyaml
 
 
-scipy~=1.10.1
-scikit-learn~=1.4.2
+scipy
+scikit-learn
 tensorflow~=2.16.1
 tensorboard~=2.16.2
 keras~=3.3.3
@@ -27,11 +27,12 @@ transformers
 datasets
 torch
 accelerate
+sentencepiece~=0.2.0
 
 
 bertopic
-nltk~=3.8.1
-spacy~=3.7.3
+nltk
+spacy~=3.2.6
 contractions
 
-gensim~=4.3.2
+gensim
