@@ -2,7 +2,6 @@
 
 import os
 import pickle
-
 import numpy as np
 import pandas as pd
 import yaml
@@ -11,7 +10,6 @@ from gensim.models import KeyedVectors
 from config import config
 from sklearn.model_selection import train_test_split
 from tensorflow.keras import backend as K
-import tensorflow as tf
 
 
 def save_preprocessing(results, model_file):
@@ -83,6 +81,8 @@ def get_dataset(
     df = label_renaming(df)
     df = df[df["category"].isin(config.new_names)]
     df = clean(df)
+    # filter out articles with less than 10 words
+    df = df[df["full_article"].apply(lambda x: len(x.split()) > 10)]
     targets = df["category"]
     if one_hot:
         targets = pd.get_dummies(targets)
