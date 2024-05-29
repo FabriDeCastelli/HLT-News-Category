@@ -22,7 +22,7 @@ import pandas as pd
 
 class BidirectionalLSTM(Model, HyperModel):
     """
-    Bidirectional LSTM class.
+    Bidirectional LSTM class. Extends the Model abstract class and implements the HyperModel interface.
     """
 
     def __init__(
@@ -30,6 +30,8 @@ class BidirectionalLSTM(Model, HyperModel):
     ):
         """
         Constructor for the Bidirectional LSTM class.
+        It creates the embedding matrix if pretrained embeddings are provided.
+        The hyperparameters are read from the yaml file.
 
         :param model: the K.models.Sequential model, if provided in input **kwargs are ignored
         """
@@ -51,12 +53,25 @@ class BidirectionalLSTM(Model, HyperModel):
         self.hyperparameters = read_yaml(config.HYPERPARAMETERS_PATH.format(repr(self)))
 
     def build(self, hp=None, **kwargs):
+        """
+        Build the model. If hp is None, the model is built with the fixed hyperparameters,
+        otherwise it is built with the hyperparameters provided in the hp object.
 
+        :param hp: the hyperparameters, if None the model is trained with the fixed hyperparameters
+        :param kwargs: the hyperparameters to use if hp is None
+        :return: the built model
+        """
         if hp is None:
             return self._build_fixed(**kwargs)
         return self._build_hp(hp)
 
     def _build_hp(self, hp):
+        """
+        Build the model with the hyperparameters provided in the hp object, using keras-tuner.
+
+        :param hp: the HyperParameters
+        :return: the built model
+        """
         lstm_units_1 = hp.Choice("lstm_units_1", self.hyperparameters["lstm_units_1"])
         lstm_units_2 = hp.Choice("lstm_units_2", self.hyperparameters["lstm_units_2"])
 
@@ -123,7 +138,12 @@ class BidirectionalLSTM(Model, HyperModel):
         return bidirLSTM
 
     def _build_fixed(self, **kwargs):
+        """
+        Build the model with the fixed hyperparameters.
 
+        :param kwargs: the hyperparameters to use
+        :return: the built model
+        """
         lstm_units_1 = kwargs.get("lstm_units_1", 105)
         lstm_units_2 = kwargs.get("lstm_units_2", 42)
         dropout1 = kwargs.get("dropout1", 0.3)
@@ -191,19 +211,14 @@ class BidirectionalLSTM(Model, HyperModel):
 
     @pipeline.setter
     def pipeline(self, stages: List[Callable]):
-        """
-        Set the pipeline for the model.
-
-        :param stages: an array of functions that are going to be executed in the pipeline.
-        :return:
-        """
         self._pipeline = Pipeline(stages)
 
     def run_pipeline(self, data: pd.DataFrame, save=True):
         """
         Run the pipeline. If the pipeline for this model has already been run, then the dataset is read from the file.
+        In this function the embedding matrix is created if pretrained embeddings are provided.
 
-        :param data: the data to run the pipeline on as a pandas dataframe.
+        :param data: the data to run the pipeline on. The type is validated in the Pipeline class.
         :param save: a boolean indicating whether to save the data to a file.
         :return: the data after the processing.
         """
@@ -241,7 +256,8 @@ class BidirectionalLSTM(Model, HyperModel):
         n_iter=30,
     ):
         """
-        Performs some hyperparameters' optimization, using kera-tuner's RandomSearch.
+        Performs some hyperparameters' optimization, using keras-tuner's RandomSearch on F1 macro average over the
+        validation set (x_val, y_val). The best model is then retrieved and saved.
 
         :param x_train: the training data
         :param y_train: the target values
@@ -274,34 +290,20 @@ class BidirectionalLSTM(Model, HyperModel):
         return best_hps
 
     def evaluate(self, inputs, targets):
-        """
-        Evaluate the model.
-
-        :param inputs: the data to evaluate the model on
-        :param targets: the target values
-        :return: the score of the model
-        """
         return self._bidirLSTM.evaluate(inputs, targets)
 
     def predict(self, data):
         """
-        Make prediction over data.
+        Make prediction over data and format them into categorical labels.
 
         :param data: the data to predict
-        :return: the predicted values
+        :return: the predicted values as categorical labels
         """
         y_pred = self._bidirLSTM.predict(data)
-        identity_matrix = np.eye(5)
-        permutation_matrix = identity_matrix[:, [2, 4, 3, 0, 1]]
-        y_pred = np.dot(y_pred, permutation_matrix)
         classes = np.argmax(y_pred, axis=1)
         return np.vectorize(config.id2label.get)(classes)
 
-
     def save_model(self):
-        """
-        Save the model to a file.
-        """
         path = os.path.join(config.MODELS_PATH, repr(self) + ".keras")
         if not os.path.exists(config.MODELS_PATH):
             os.mkdir(config.MODELS_PATH)
@@ -311,6 +313,7 @@ class BidirectionalLSTM(Model, HyperModel):
     def load_model(cls):
         """
         Load the model from a file. I path is None it loads the weights from the default model location.
+        The default format is .keras.
 
         :return: the model
         """
@@ -351,6 +354,9 @@ class BidirectionalLSTM(Model, HyperModel):
 
             hyperparameters = trial_data["hyperparameters"]["values"]
             score = trial_data["score"]
+
+            if score is None:
+                continue
 
             # save the best score
             if score > best_score:
@@ -400,9 +406,6 @@ class BidirectionalLSTM(Model, HyperModel):
         return sorted(top_5, key=lambda x: x[1], reverse=True)[:n]
 
     def summary(self):
-        """
-        Print the summary of the model.
-        """
         print(self._bidirLSTM.summary())
 
     def __repr__(self):

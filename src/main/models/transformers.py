@@ -58,17 +58,12 @@ class Transformer(Model):
 
     @pipeline.setter
     def pipeline(self, stages: List[Callable]):
-        """
-        Set the pipeline for the model.
-
-        :param stages: an array of functions that are going to be executed in the pipeline.
-        :return:
-        """
         self._pipeline = Pipeline(stages)
 
     def run_pipeline(self, data: pd.DataFrame, save=True):
         """
         Run the pipeline. If the pipeline for this model has already been run, then the dataset is read from the file.
+        The results are flattened assuming we only have one column of data, which comprehends .
 
         :param data: the data to run the pipeline on as a pandas dataframe.
         :param save: a boolean indicating whether to save the data to a file.
@@ -150,19 +145,20 @@ class Transformer(Model):
 
     @classmethod
     def load_model(cls):
-        # TODO: Implement loading the model
-        pass
+        raise NotImplementedError(
+            "This method can't be implemented (due to the transformers library)."
+        )
 
     def save_results(self, test_data, **kwargs):
         result = self.predict(test_data)
         predictions = np.argmax(result[0], axis=1)
         targets = result[1]
+        predictions = np.vectorize(config.id2label.get)(predictions)
+        targets = np.vectorize(config.id2label.get)(targets)
         report = classification_report(targets, predictions)
         directory = config.RESULTS_DIRECTORY.format(repr(self))
         os.makedirs(directory, exist_ok=True)
         path = os.path.join(directory, "metrics.txt")
-        predictions = np.vectorize(config.id2label.get)(predictions)    
-        targets = np.vectorize(config.id2label.get)(targets)
         with open(path, "w") as file:
             file.write(report)
         plotting.plot_confusion_matrix(

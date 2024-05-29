@@ -55,17 +55,12 @@ class Logistic(Model):
 
     @pipeline.setter
     def pipeline(self, pipeline: List[Callable]):
-        """
-        Set the pipeline for the model.
-
-        :param pipeline: an array of functions that are going to be executed in the pipeline.
-        :return:
-        """
         self._pipeline = Pipeline(pipeline)
 
     def run_pipeline(self, data: pd.DataFrame, save=True):
         """
         Run the pipeline. If the pipeline for this model has already been run, then the dataset is read from the file.
+        Since in the pipline class the return format is universal, it has to be adapted dynamically.
 
         :param data: the data to run the pipeline on.
         :param save: a boolean indicating whether to save the data to a file.
@@ -92,7 +87,7 @@ class Logistic(Model):
 
     def grid_search(self, x_train, y_train, n_iter=30):
         """
-        Cross validate the model.
+        Performs a random grid search.
 
         :param x_train: the training data
         :param y_train: the target values
@@ -116,28 +111,12 @@ class Logistic(Model):
         return result
 
     def evaluate(self, inputs, targets):
-        """
-        Evaluate the model.
-
-        :param inputs: the data to evaluate the model on
-        :param targets: the target values
-        :return: the score of the model
-        """
         return self.logistic.score(inputs, targets)
 
     def predict(self, data):
-        """
-        Make prediction over data.
-
-        :param data: the data to predict
-        :return: the predicted values
-        """
         return self.logistic.predict(data)
 
     def save_model(self):
-        """
-        Save the model to a file.
-        """
         path = os.path.join(MODELS_PATH, repr(self) + ".pkl")
         os.mkdir(path)
         joblib.dump(self.logistic, path)
@@ -145,7 +124,7 @@ class Logistic(Model):
     @classmethod
     def load_model(cls):
         """
-        Load the model from a file.
+        Load the model from a file in a pkl format.
         """
         path = os.path.join(MODELS_PATH, repr(cls) + ".pkl")
         assert os.path.isfile(

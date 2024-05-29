@@ -10,6 +10,7 @@ from gensim.models import KeyedVectors
 from config import config
 from sklearn.model_selection import train_test_split
 from tensorflow.keras import backend as K
+import keras
 
 
 def save_preprocessing(results, model_file):
@@ -85,10 +86,10 @@ def get_dataset(
     df = df[df["full_article"].apply(lambda x: len(x.split()) > 10)]
     targets = df["category"]
     if one_hot:
-        # targets = targets.map(config.label2id)
-        # targets = targets.apply(lambda x: np.eye(5)[x])
-        # targets = np.array(targets.to_list())
-        targets = pd.get_dummies(targets)
+        targets = targets.map(config.label2id)
+        targets = targets.apply(lambda x: np.eye(5)[x])
+        targets = np.array(targets.to_list())
+        # targets = pd.get_dummies(targets)
     else:
         targets = targets.to_numpy()
     return df.drop(columns=["category"]).to_numpy(), targets
@@ -234,6 +235,7 @@ def embedding_matrix_statistics(pretrained_embeddings):
     return found / (found + not_found), unmatched_words
 
 
+@keras.saving.register_keras_serializable()
 def precision_macro(y_true, y_pred):
     y_pred = K.round(y_pred)
     y_true = K.cast(y_true, "float")
@@ -245,6 +247,7 @@ def precision_macro(y_true, y_pred):
     return K.mean(precision)
 
 
+@keras.saving.register_keras_serializable()
 def recall_macro(y_true, y_pred):
     y_pred = K.round(y_pred)
     y_true = K.cast(y_true, "float")
@@ -256,6 +259,7 @@ def recall_macro(y_true, y_pred):
     return K.mean(recall)
 
 
+@keras.saving.register_keras_serializable()
 def f1_macro(y_true, y_pred):
     # Calculate precision macro average
     precision = precision_macro(y_true, y_pred)

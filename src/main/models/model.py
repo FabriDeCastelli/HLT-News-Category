@@ -20,65 +20,35 @@ class Model(ABC):
     @property
     @abstractmethod
     def pipeline(self):
-        """
-        Getter of the pipeline of the model.
-        """
         raise NotImplementedError()
 
     @pipeline.setter
     @abstractmethod
     def pipeline(self, pipeline: List[Callable]):
-        """
-        Setter of the pipeline.
-        """
         raise NotImplementedError()
 
     @abstractmethod
     def run_pipeline(self, data):
-        """
-        Run the pipeline on the data.
-
-        :param data: The data to run the pipeline on.
-        """
         raise NotImplementedError()
 
     def summary(self):
-        """
-        Print a summary of the model.
-        """
         raise NotImplementedError()
 
     @abstractmethod
     def fit(self, inputs, targets):
-        """
-        Fit the model to the data.
-
-        :param inputs: The input data.
-        :param targets: The target data.
-        """
         raise NotImplementedError()
 
     @abstractmethod
     def predict(self, inputs):
-        """
-        Predict the target variable for the input data.
-
-        :param inputs: The input data.
-        """
         raise NotImplementedError()
 
     @abstractmethod
     def save_model(self):
-        """
-        Save the model.
-        """
+        raise NotImplementedError()
 
     @classmethod
     @abstractmethod
     def load_model(cls):
-        """
-        Load the model.
-        """
         raise NotImplementedError()
 
     def save_results(self, x_test, y_test):
@@ -95,7 +65,6 @@ class Model(ABC):
             y_test = y_test.argmax(axis=1)
             y_test = np.vectorize(config.id2label.get)(y_test)
         y_pred = self.predict(x_test)
-        print(y_pred[:10])
         report = classification_report(y_test, y_pred)
         directory = RESULTS_DIRECTORY.format(repr(self))
         os.makedirs(directory, exist_ok=True)

@@ -1,4 +1,5 @@
 """ Multinomial Naive Bayes Classifier """
+
 import numpy as np
 from src.main.models.model import Model
 from src.main.pipeline.pipeline import Pipeline
@@ -51,16 +52,12 @@ class Naivebayes(Model):
 
     @pipeline.setter
     def pipeline(self, pipeline: List[Callable]):
-        """
-        Set the pipeline for the model.
-
-        :param pipeline: an array of functions that are going to be executed in the pipeline.
-        """
         self._pipeline = Pipeline(pipeline)
 
     def run_pipeline(self, data: pd.DataFrame, save=True):
         """
         Run the pipeline. If the pipeline for this model has already been run, then the dataset is read from the file.
+        Since the pipeline is returned in a common format, this has to be adapted to this model.
 
         :param data: the data to run the pipeline on.
         :param save: a boolean indicating whether to save the data to a file.
@@ -86,28 +83,12 @@ class Naivebayes(Model):
             self._naivebayes = self._naivebayes.fit(inputs, targets, sample_weight)
 
     def evaluate(self, inputs, targets):
-        """
-        Evaluate the model.
-
-        :param inputs: the data to evaluate the model on
-        :param targets: the target values
-        :return: the score of the model
-        """
         return self._naivebayes.score(inputs, targets)
 
     def predict(self, data):
-        """
-        Make prediction over data.
-
-        :param data: the data to predict
-        :return: the predicted values
-        """
         return self._naivebayes.predict(data)
 
     def save_model(self):
-        """
-        Save the model to a file.
-        """
         path = os.path.join(MODELS_PATH, repr(self) + ".pkl")
         os.mkdir(path)
         joblib.dump(self._naivebayes, path)
@@ -115,7 +96,7 @@ class Naivebayes(Model):
     @classmethod
     def load_model(cls):
         """
-        Load the model from a file.
+        Load the model from a file in a pkl format.
         """
         path = os.path.join(MODELS_PATH, repr(cls) + ".pkl")
         assert os.path.isfile(

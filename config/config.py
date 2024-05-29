@@ -33,6 +33,7 @@ MODELS_PATH = os.path.join(PROJECT_FOLDER_PATH, "models")
 
 # PIPELINE PATH
 PIPELINE_DATASET_PATH = os.path.join(PROJECT_FOLDER_PATH, "dataset", "preprocessing")
+os.makedirs(PIPELINE_DATASET_PATH, exist_ok=True)
 
 # TENSORBOARD PATH
 LOGS_PATH = os.path.join(PROJECT_FOLDER_PATH, "logs", "{}")
