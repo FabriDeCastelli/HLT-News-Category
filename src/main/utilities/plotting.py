@@ -8,6 +8,7 @@ from sklearn.metrics import (
     accuracy_score,
     confusion_matrix,
 )
+from config import config
 
 
 def plot_confusion_matrix(y_test, y_pred, path=None):
@@ -18,10 +19,9 @@ def plot_confusion_matrix(y_test, y_pred, path=None):
     :param y_pred: the predicted values
     :param path: the path to save the plot
     """
-    cm = confusion_matrix(y_test, y_pred)
 
-    # Category names in order
-    categories = ["Entertainment", "Life", "Politics", "Sport", "Voices"]
+    labels = list(config.label2id.keys())
+    cm = confusion_matrix(y_test, y_pred, labels=labels)
 
     # confusion matrix plot
     plt.figure(figsize=(8, 6))
@@ -31,8 +31,8 @@ def plot_confusion_matrix(y_test, y_pred, path=None):
         fmt="d",
         cmap="Blues",
         cbar=False,
-        xticklabels=categories,
-        yticklabels=categories,
+        xticklabels=labels,
+        yticklabels=labels,
     )
     plt.xlabel("Predicted labels")
     plt.ylabel("True labels")

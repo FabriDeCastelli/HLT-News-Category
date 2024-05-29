@@ -143,8 +143,7 @@ class Transformer(Model):
         self.trainer.train()
 
     def predict(self, test_dataset):
-        predictions, targets = self.trainer.predict(test_dataset)
-        return predictions, targets
+        return self.trainer.predict(test_dataset)
 
     def save_model(self):
         self.trainer.save_model(config.MODELS_PATH.format(repr(self)))
@@ -162,6 +161,8 @@ class Transformer(Model):
         directory = config.RESULTS_DIRECTORY.format(repr(self))
         os.makedirs(directory, exist_ok=True)
         path = os.path.join(directory, "metrics.txt")
+        predictions = np.vectorize(config.id2label.get)(predictions)    
+        targets = np.vectorize(config.id2label.get)(targets)
         with open(path, "w") as file:
             file.write(report)
         plotting.plot_confusion_matrix(
@@ -169,4 +170,4 @@ class Transformer(Model):
         )
 
     def __repr__(self):
-        return self.checkpoint
+        return self.checkpoint.split("/")[-1]

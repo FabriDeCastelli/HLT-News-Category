@@ -260,7 +260,7 @@ class BidirectionalLSTM(Model, HyperModel):
 
         tuner = kt.RandomSearch(
             self,
-            objective="val_f1_score",
+            objective=kt.Objective("val_f1_macro", direction="max"),
             max_trials=n_iter,
             executions_per_trial=1,
             directory=config.RESULTS_DIRECTORY.format(repr(self)),
@@ -291,8 +291,12 @@ class BidirectionalLSTM(Model, HyperModel):
         :return: the predicted values
         """
         y_pred = self._bidirLSTM.predict(data)
+        identity_matrix = np.eye(5)
+        permutation_matrix = identity_matrix[:, [2, 4, 3, 0, 1]]
+        y_pred = np.dot(y_pred, permutation_matrix)
         classes = np.argmax(y_pred, axis=1)
-        return np.vectorize(config.id2label.get)(classes).astype(object)
+        return np.vectorize(config.id2label.get)(classes)
+
 
     def save_model(self):
         """

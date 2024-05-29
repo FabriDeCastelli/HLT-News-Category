@@ -85,8 +85,13 @@ def get_dataset(
     df = df[df["full_article"].apply(lambda x: len(x.split()) > 10)]
     targets = df["category"]
     if one_hot:
+        # targets = targets.map(config.label2id)
+        # targets = targets.apply(lambda x: np.eye(5)[x])
+        # targets = np.array(targets.to_list())
         targets = pd.get_dummies(targets)
-    return df.drop(columns=["category"]).to_numpy(), targets.to_numpy()
+    else:
+        targets = targets.to_numpy()
+    return df.drop(columns=["category"]).to_numpy(), targets
 
 
 def load_preprocessing(model_file):

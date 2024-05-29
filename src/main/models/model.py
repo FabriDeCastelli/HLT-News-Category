@@ -90,9 +90,12 @@ class Model(ABC):
         :param y_test: The test target data.
         """
         if y_test.ndim == 2:
-            y_test = y_test.to_numpy().argmax(axis=1)
+            if not isinstance(y_test, np.ndarray):
+                y_test = y_test.to_numpy()
+            y_test = y_test.argmax(axis=1)
             y_test = np.vectorize(config.id2label.get)(y_test)
         y_pred = self.predict(x_test)
+        print(y_pred[:10])
         report = classification_report(y_test, y_pred)
         directory = RESULTS_DIRECTORY.format(repr(self))
         os.makedirs(directory, exist_ok=True)

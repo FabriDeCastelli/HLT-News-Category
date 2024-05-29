@@ -1,5 +1,5 @@
 """ Multinomial Naive Bayes Classifier """
-
+import numpy as np
 from src.main.models.model import Model
 from src.main.pipeline.pipeline import Pipeline
 from config.config import MODELS_PATH
@@ -67,7 +67,10 @@ class Naivebayes(Model):
         :return: the data after the processing.
         """
         assert self.pipeline is not None, "Cannot run the pipeline: it is not set."
-        return self.pipeline.execute(data, model_file=repr(self) + ".npz", save=save)
+        result = self.pipeline.execute(data, model_file=repr(self) + ".npz", save=save)
+        if isinstance(result, np.ndarray) and result.shape == ():
+            return result.item()
+        return result
 
     def fit(self, inputs, targets, sample_weight=None):
         """
