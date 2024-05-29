@@ -21,7 +21,7 @@ Recommended version of python is python==3.1.18.
 
 To install the required libraries, run the following command:
 
-```bash pip install -r requirements.txt```
+```pip install -r requirements.txt```
 
 For test execution, each model is implemented in a separate notebook file.
 Notebooks are located in **src/test** folder. Each notebook is named with the model name.
