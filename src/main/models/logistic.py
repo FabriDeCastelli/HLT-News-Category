@@ -28,6 +28,7 @@ class Logistic(Model):
         documentation at
         https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html
 
+        :param model: the Logistic Regression model, if provided in input **kwargs are ignored
         :param kwargs: the arguments that are going to be passed to the Logistic Regression model.
         """
         if model is not None:
@@ -87,7 +88,7 @@ class Logistic(Model):
 
     def grid_search(self, x_train, y_train, n_iter=30):
         """
-        Performs a random grid search.
+        Performs a random grid search. Best model is chosen based on the F1 score.
 
         :param x_train: the training data
         :param y_train: the target values

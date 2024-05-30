@@ -34,6 +34,7 @@ class BidirectionalLSTM(Model, HyperModel):
         The hyperparameters are read from the yaml file.
 
         :param model: the K.models.Sequential model, if provided in input **kwargs are ignored
+        :param kwargs: the arguments that are going to be passed to the Logistic Regression model
         """
         super().__init__()
         self.embedding_matrix = None

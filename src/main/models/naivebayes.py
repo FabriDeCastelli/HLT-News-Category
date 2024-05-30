@@ -26,7 +26,7 @@ class Naivebayes(Model):
         https://scikit-learn.org/stable/modules/naive_bayes.html#multinomial-naive-bayes
 
         :param model: the MultinomialNB model, if provided in input **kwargs are ignored
-        :param kwargs: the arguments that are going to be passed to the Logistic Regression model.
+        :param kwargs: the arguments that are going to be passed to the MultinomialNB model.
         """
         if model is not None:
             self._naivebayes = model

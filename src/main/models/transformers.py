@@ -30,6 +30,9 @@ class Transformer(Model):
     def __init__(self, checkpoint="distilbert-base-uncased", **training_args):
         """
         Constructor for the general transformers class.
+
+        :param checkpoint: a string, the model id of a predefined tokenizer hosted inside a model repo on huggingface.co.
+        :param training_args: the training arguments for constructing the model.
         """
 
         self.checkpoint = checkpoint
@@ -75,6 +78,12 @@ class Transformer(Model):
         ).flatten()
 
     def compute_metrics(self, eval_pred):
+        """
+        The function that will be used to compute metrics at evaluation.
+
+        :param eval_pred: the evaluation predictions.
+        :return: a dictionary with the metrics.
+        """
         predictions, labels = eval_pred
         predictions = np.argmax(predictions, axis=1)
         accuracy = self.metrics["accuracy"].compute(
@@ -97,6 +106,18 @@ class Transformer(Model):
         }
 
     def prepare_dataset(self, x_train, y_train, x_val, y_val, x_test, y_test):
+        """
+        Prepare the dataset for training huggingface transformers.
+
+        :param x_train: the training data.
+        :param y_train: the training labels.
+        :param x_val: the validation data.
+        :param y_val: the validation labels.
+        :param x_test: the test data.
+        :param y_test: the test labels.
+
+        :return: the training, validation and test datasets.
+        """
 
         train_data = {"text": x_train, "label": y_train}
         val_data = {"text": x_val, "label": y_val}

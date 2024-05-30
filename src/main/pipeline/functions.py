@@ -1,6 +1,5 @@
-""" Functions Module.
+""" Pipeline Functions Module.
 The functions inside this module are used in the pipeline on a data stream.
-Every function should take a single argument and return a single value.
 There are two types of functions:
 - Parallelizable functions: these kind of functions have the default value for the parallel_mode parameter to be true.
                             moreover they must take a single string object as input and return a single string object

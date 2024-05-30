@@ -42,7 +42,7 @@ def get_dataset(
 
 def label_renaming(df):
     """
-    Rename the labels in the dataset to the new names, according to names defined in a configuration file.
+    Rename the labels in the dataset to the new names, according to names defined in configuration file.
 
     :param df: The dataframe containing the dataset.
     :return: The dataframe with the labels renamed.
@@ -198,7 +198,7 @@ def create_embedding_matrix(pretrained_embeddings: dict | KeyedVectors) -> np.nd
     """
     Creates the embedding matrix from the word embeddings. The returned embedding matrix is a numpy ndarray of shape
     (NUM_WORDS, EMBEDDING_DIM), where NUM_WORDS is the number of words in the dataset and EMBEDDING_DIM is the
-    dimension of the embeddings. It is built using a word index that is saved in the pipeline dataset folder: if not
+    dimension of the embeddings. It is built using a word index that is saved in the preprocessing dataset folder: if not
     provided it raises a FileNotFoundError.
 
     :param pretrained_embeddings: can be obtained with the load_pretrained_embeddings function.
