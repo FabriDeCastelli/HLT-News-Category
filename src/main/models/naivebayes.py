@@ -90,7 +90,6 @@ class Naivebayes(Model):
 
     def save_model(self):
         path = os.path.join(MODELS_PATH, repr(self) + ".pkl")
-        os.mkdir(path)
         joblib.dump(self._naivebayes, path)
 
     @classmethod

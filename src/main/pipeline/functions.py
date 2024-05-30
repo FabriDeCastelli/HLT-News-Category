@@ -139,7 +139,7 @@ def unify_numbers(text: str, parallel_mode=True) -> str:
 
 def tokenize(corpus: List[str], parallel_mode=False) -> np.ndarray:
     """
-    Tokenize the corpus using the Tokenizer from keras. After the tokenization, the word_index and num_words are updated
+    Tokenize the corpus using the Tokenizer from keras. After the tokenization, the word_index and NUM_WORDS are updated
     in the config file. The return value is the padded sequences with a predefined length (config).
     See https://keras.io/api/keras_nlp/base_classes/tokenizer/ for more information.
     Example: ["I am a test", "This is another test"] -> [[1, 2, 3, 4], [5, 6, 7, 4]]
@@ -156,7 +156,7 @@ def tokenize(corpus: List[str], parallel_mode=False) -> np.ndarray:
     with open(path, "wb") as f:
         pickle.dump(word_index, f)
 
-    config.num_words = len(word_index) + 1
+    config.NUM_WORDS = len(word_index) + 1
     sequences = tokenizer.texts_to_sequences(corpus)
     return pad_sequences(sequences, maxlen=config.MAX_SEQ_LENGTH)
 

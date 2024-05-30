@@ -81,7 +81,7 @@ class BidirectionalLSTM(Model, HyperModel):
         if self.embedding_matrix is not None:
             bidirLSTM.add(
                 K.layers.Embedding(
-                    input_dim=config.num_words,
+                    input_dim=config.NUM_WORDS,
                     output_dim=config.EMBEDDING_DIM,
                     input_length=config.MAX_SEQ_LENGTH,
                     weights=[self.embedding_matrix],
@@ -91,7 +91,7 @@ class BidirectionalLSTM(Model, HyperModel):
         else:
             bidirLSTM.add(
                 K.layers.Embedding(
-                    input_dim=config.num_words,
+                    input_dim=config.NUM_WORDS,
                     output_dim=config.EMBEDDING_DIM,
                     input_length=config.MAX_SEQ_LENGTH,
                 )
@@ -156,7 +156,7 @@ class BidirectionalLSTM(Model, HyperModel):
         if self.embedding_matrix is not None:
             bidirLSTM.add(
                 K.layers.Embedding(
-                    input_dim=config.num_words,
+                    input_dim=config.NUM_WORDS,
                     output_dim=config.EMBEDDING_DIM,
                     input_length=config.MAX_SEQ_LENGTH,
                     weights=[self.embedding_matrix],
@@ -166,7 +166,7 @@ class BidirectionalLSTM(Model, HyperModel):
         else:
             bidirLSTM.add(
                 K.layers.Embedding(
-                    input_dim=config.num_words,
+                    input_dim=config.NUM_WORDS,
                     output_dim=config.EMBEDDING_DIM,
                     input_length=config.MAX_SEQ_LENGTH,
                 )
@@ -305,8 +305,6 @@ class BidirectionalLSTM(Model, HyperModel):
 
     def save_model(self):
         path = os.path.join(config.MODELS_PATH, repr(self) + ".keras")
-        if not os.path.exists(config.MODELS_PATH):
-            os.mkdir(config.MODELS_PATH)
         self._bidirLSTM.save(path)
 
     @classmethod

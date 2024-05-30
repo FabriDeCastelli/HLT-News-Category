@@ -37,7 +37,7 @@ class TestPipeline(unittest.TestCase):
         pipeline = Pipeline([functions.clean_text, g])
         result = pipeline.execute(data)
         without_g = Pipeline([functions.clean_text])
-        result_no_g = without_g.execute(data)
+        result_no_g = without_g.execute(data).reshape(-1)
         self.assertTrue((result == result_no_g).all())
 
     def test_alternating_execution_mode(self):

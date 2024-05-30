@@ -13,31 +13,36 @@ from tensorflow.keras import backend as K
 import keras
 
 
-def save_preprocessing(results, model_file):
+def get_dataset(
+    filepath=config.DATASET_PATH, one_hot=False
+) -> tuple[np.ndarray, np.ndarray]:
     """
-    Save the preprocessing results to a file.
+    Reads the whole dataset from the given filepath, performs some kind of cleaning and returns the inputs and targets
+    in a numpy format. The cleaning is performed by the 'clean' function and the 'label_renaming' function.
 
-    :param results: The results to save.
-    :param model_file: The model to save the results for.
+    :param one_hot: A boolean indicating whether to one hot encode the labels.
+    :param filepath: The path to the dataset file.
+    :return: Inputs and targets
     """
-    assert model_file is not None, "Model (filepath) is not provided."
-
-    filepath = os.path.join(config.PIPELINE_DATASET_PATH, model_file)
-
-    if not os.path.exists(config.PIPELINE_DATASET_PATH):
-        os.makedirs(config.PIPELINE_DATASET_PATH)
-
-    if ".npz" in filepath:
-        save_npz(filepath, results)
-    elif ".npy" in filepath:
-        np.save(filepath, results, allow_pickle=True)
+    df = pd.read_json(filepath, lines=True)
+    df = label_renaming(df)
+    df = df[df["category"].isin(config.new_names)]
+    df = clean(df)
+    # filter out articles with less than 10 words
+    df = df[df["full_article"].apply(lambda x: len(x.split()) > 10)]
+    targets = df["category"]
+    if one_hot:
+        targets = targets.map(config.label2id)
+        targets = targets.apply(lambda x: np.eye(5)[x])
+        targets = np.array(targets.to_list())
     else:
-        raise ValueError(f"File extension of {filepath} is not supported for saving.")
+        targets = targets.to_numpy()
+    return df.drop(columns=["category"]).to_numpy(), targets
 
 
 def label_renaming(df):
     """
-    Rename the labels in the dataset to the new names.
+    Rename the labels in the dataset to the new names, according to names defined in a configuration file.
 
     :param df: The dataframe containing the dataset.
     :return: The dataframe with the labels renamed.
@@ -68,31 +73,26 @@ def clean(df, merge=True):
     return df
 
 
-def get_dataset(
-    filepath=config.DATASET_PATH, one_hot=False
-) -> tuple[np.ndarray, np.ndarray]:
+def save_preprocessing(results, model_file):
     """
-    Read the dataset from the given filepath and return the dataframe.
+    Save the preprocessing results to a file.
 
-    :param one_hot: A boolean indicating whether to one hot encode the labels.
-    :param filepath: The path to the dataset file.
-    :return: Inputs and targets
+    :param results: The results to save.
+    :param model_file: The model to save the results for.
     """
-    df = pd.read_json(filepath, lines=True)
-    df = label_renaming(df)
-    df = df[df["category"].isin(config.new_names)]
-    df = clean(df)
-    # filter out articles with less than 10 words
-    df = df[df["full_article"].apply(lambda x: len(x.split()) > 10)]
-    targets = df["category"]
-    if one_hot:
-        targets = targets.map(config.label2id)
-        targets = targets.apply(lambda x: np.eye(5)[x])
-        targets = np.array(targets.to_list())
-        # targets = pd.get_dummies(targets)
+    assert model_file is not None, "Model (filepath) is not provided."
+
+    filepath = os.path.join(config.PIPELINE_DATASET_PATH, model_file)
+
+    if not os.path.exists(config.PIPELINE_DATASET_PATH):
+        os.makedirs(config.PIPELINE_DATASET_PATH)
+
+    if ".npz" in filepath:
+        save_npz(filepath, results)
+    elif ".npy" in filepath:
+        np.save(filepath, results, allow_pickle=True)
     else:
-        targets = targets.to_numpy()
-    return df.drop(columns=["category"]).to_numpy(), targets
+        raise ValueError(f"File extension of {filepath} is not supported for saving.")
 
 
 def load_preprocessing(model_file):
@@ -116,10 +116,10 @@ def load_preprocessing(model_file):
 
 def read_yaml(path):
     """
-    Reads a file in .yaml format.
+    Reads a file in .yaml format. Used to read the hyperparameters to tune models.
 
     :param path: the path of the file to read
-    :return: the dictionary contained in the file
+    :return: the dictionary representation of the file
     """
     with open(path, "r") as file:
         dictionary = yaml.load(file, Loader=yaml.FullLoader)
@@ -131,13 +131,16 @@ def split_train_val_test(
     inputs, targets, validation_size=0.2, test_size=0.1, random_state=42
 ):
     """
-    Split the dataset into training, validation, and test sets.
+    Split the dataset into training, validation, and test sets. First, it splits the dataset into training and test
+    sets, then it splits the training set into training and validation sets. The splits that are passed as
+    hyperparameters are coherent with the final actual splits sizes.
 
-    :param inputs: The input data.
-    :param targets: The target data.
+    :param inputs: The input data (features).
+    :param targets: The target data (labels).
     :param validation_size: The size of the validation set.
     :param test_size: The size of the test set.
-    :return: The split dataset.
+    :param random_state: The random state for reproducibility.
+    :return: 6 numpy arrays: x_train, x_val, x_test, y_train, y_val, y_test
     """
 
     if validation_size + test_size >= 1:
@@ -167,40 +170,45 @@ def split_train_val_test(
     return x_train, x_val, x_test, y_train, y_val, y_test
 
 
-def load_pretrained_embeddings(embedding):
+def load_pretrained_embeddings(embedding) -> dict | KeyedVectors:
     """
     Load the pretrained embeddings from the given path.
+    If the embeddings name is not found, it raises a ValueError.
+    If it is "glove" the result is a dictionary, otherwise it is a KeyedVectors object.
 
-    :param embedding: The type of the embedding.
-    :return: The pretrained embeddings.
+    :param embedding: The type of the embeddings.
+    :return: The pretrained embeddings in a dictionary format.
     """
     if embedding == "google":
-        return KeyedVectors.load_word2vec_format(config.google_file, binary=True)
+        return KeyedVectors.load_word2vec_format(config.GOOGLE_PATH, binary=True)
     elif embedding == "fastText":
-        return KeyedVectors.load_word2vec_format(config.fastText_file)
+        return KeyedVectors.load_word2vec_format(config.FASTTEXT_PATH)
     elif embedding == "glove":
         glove_embeddings = {}
-        with open(config.glove_file) as f:
+        with open(config.GLOVE_PATH) as f:
             for line in f:
-                word, coefs = line.split(maxsplit=1)
-                coefs = np.fromstring(coefs, "f", sep=" ")
-                glove_embeddings[word] = coefs
+                word, coefficients = line.split(maxsplit=1)
+                coefficients = np.fromstring(coefficients, "f", sep=" ")
+                glove_embeddings[word] = coefficients
         return glove_embeddings
     raise ValueError(f"Embedding {embedding} is not supported.")
 
 
-def create_embedding_matrix(pretrained_embeddings):
+def create_embedding_matrix(pretrained_embeddings: dict | KeyedVectors) -> np.ndarray:
     """
-    Create the embedding matrix from the word embeddings.
+    Creates the embedding matrix from the word embeddings. The returned embedding matrix is a numpy ndarray of shape
+    (NUM_WORDS, EMBEDDING_DIM), where NUM_WORDS is the number of words in the dataset and EMBEDDING_DIM is the
+    dimension of the embeddings. It is built using a word index that is saved in the pipeline dataset folder: if not
+    provided it raises a FileNotFoundError.
 
-    :param pretrained_embeddings: The pretrained embeddings.
-    :return: The embedding matrix.
+    :param pretrained_embeddings: can be obtained with the load_pretrained_embeddings function.
+    :return: The embedding matrix in a numpy ndarray format, of shape (NUM_WORDS, EMBEDDING_DIM).
     """
 
     path = os.path.join(config.PIPELINE_DATASET_PATH, "word_index.pkl")
     word_index = pickle.load(open(path, "rb"))
 
-    embedding_matrix = np.zeros((config.num_words, config.EMBEDDING_DIM))
+    embedding_matrix = np.zeros((config.NUM_WORDS, config.EMBEDDING_DIM))
     for word, i in word_index.items():
         if word in pretrained_embeddings:
             embedding_matrix[i] = pretrained_embeddings[word]
@@ -213,7 +221,7 @@ def create_embedding_matrix(pretrained_embeddings):
 
 def embedding_matrix_statistics(pretrained_embeddings):
     """
-    Get the statistics of the embedding matrix.
+    Gets the percentage of words found in the pretrained embeddings. and returns all unmatched words.
 
     :param pretrained_embeddings: The pretrained embeddings.
     :return: The statistics of the embedding matrix.
@@ -235,6 +243,11 @@ def embedding_matrix_statistics(pretrained_embeddings):
     return found / (found + not_found), unmatched_words
 
 
+# All the functions below are used to calculate the macro average of precision, recall and f1 score, which are not
+# available in the keras library. They are registered as keras serializable metrics to be used in the model evaluation.
+
+
+# region keras metrics
 @keras.saving.register_keras_serializable()
 def precision_macro(y_true, y_pred):
     y_pred = K.round(y_pred)
@@ -261,12 +274,11 @@ def recall_macro(y_true, y_pred):
 
 @keras.saving.register_keras_serializable()
 def f1_macro(y_true, y_pred):
-    # Calculate precision macro average
     precision = precision_macro(y_true, y_pred)
-
-    # Calculate recall macro average
     recall = recall_macro(y_true, y_pred)
 
-    # Calculate F1 macro average
     f1 = 2 * precision * recall / (precision + recall + K.epsilon())
     return f1
+
+
+# endregion

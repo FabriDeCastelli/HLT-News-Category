@@ -1,18 +1,17 @@
 """ Pipeline module. """
 
-import numpy as np
-
 from config.config import PIPELINE_DATASET_PATH
+from src.main.utilities import utils
+
+from typing import Callable, List
 from datetime import datetime
 from itertools import groupby
 from functools import reduce
 from joblib import Parallel, delayed
-from src.main.utilities import utils
-
-from typing import Callable, List
 
 import inspect
 import os
+import numpy as np
 
 
 class Pipeline:
