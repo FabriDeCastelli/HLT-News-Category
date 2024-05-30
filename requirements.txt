@@ -32,7 +32,10 @@ sentencepiece~=0.2.0
 
 bertopic
 nltk
-spacy~=3.2.6
+spacy~=3.7.4
+pydantic~=2.7.2
 contractions
 
 gensim
+yellowbrick
+outlines
