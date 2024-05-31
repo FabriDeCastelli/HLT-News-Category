@@ -32,8 +32,8 @@ sentencepiece~=0.2.0
 
 bertopic
 nltk
-spacy~=3.7.4
-pydantic~=2.7.2
+spacy~=3.7.2
+pydantic~=2.5.3
 contractions
 
 gensim
