@@ -21,6 +21,8 @@ Required version of python is python==3.10.12.
 
 To install the required libraries, run the following command:
 
+```pip install --update pip```
+
 ```pip install -r requirements.txt```
 
 For test execution, each model is implemented in a separate notebook file.

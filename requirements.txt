@@ -21,6 +21,7 @@ accelerate
 bertopic
 nltk
 contractions
+wordcloud
 
 gensim
 yellowbrick
