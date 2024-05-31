@@ -17,7 +17,7 @@ models the ones from BERT family and LLAMA3 LLM.
 
 # Guidelines for running the code
 
-Recommended version of python is python==3.1.18.
+Required version of python is python==3.10.12.
 
 To install the required libraries, run the following command:
 

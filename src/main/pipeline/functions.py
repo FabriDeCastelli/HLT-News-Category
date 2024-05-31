@@ -89,6 +89,7 @@ def stop_words_removal(text: str, parallel_mode=True) -> str:
     return " ".join(words)
 
 
+'''
 def lemmatization(text: str, parallel_mode=True) -> str:
     """
     Lemmatize the text using spaCy.
@@ -102,6 +103,7 @@ def lemmatization(text: str, parallel_mode=True) -> str:
 
     doc = config.nlp(text)
     return " ".join([token.lemma_ for token in doc])
+'''
 
 
 def stemming(text: str, parallel_mode=True) -> str:

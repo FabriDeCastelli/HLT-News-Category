@@ -1,25 +1,14 @@
-black
-flake8
-isort
-mypy
-doc8
-pre-commit
-
 joblib
 
+jupyter
 pandas
-dataprep
 numpy
 matplotlib
 seaborn
 pyyaml
 
 
-scipy
 scikit-learn
-tensorflow~=2.16.1
-tensorboard~=2.16.2
-keras~=3.3.3
 keras-tuner
 
 
@@ -27,15 +16,19 @@ transformers
 datasets
 torch
 accelerate
-sentencepiece~=0.2.0
 
 
 bertopic
 nltk
-spacy~=3.7.2
-pydantic~=2.5.3
 contractions
 
 gensim
 yellowbrick
 outlines
+
+scipy~=1.10.1
+tensorflow~=2.16.1
+tensorboard~=2.16.2
+keras~=3.3.3
+spacy~=3.7.4
+pydantic~=2.7.1

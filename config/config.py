@@ -63,7 +63,7 @@ id2label = {int(v): str(k) for k, v in label2id.items()}
 
 # PIPELINE STUFF
 nltk.download("stopwords", quiet=True)
-nlp = spacy.load("en_core_web_sm")
+# nlp = spacy.load("en_core_web_sm")
 stemmer = nltk.SnowballStemmer("english")
 vectorizer = TfidfVectorizer()
 stop_words = set(stopwords.words("english"))
