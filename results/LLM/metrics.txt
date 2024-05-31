@@ -1,0 +1,11 @@
+               precision    recall  f1-score   support
+
+Entertainment       0.41      0.63      0.50      1899
+         Life       0.91      0.20      0.33      4210
+     Politics       0.80      0.90      0.85      3175
+       Sports       0.21      0.90      0.35       434
+       Voices       0.32      0.45      0.37      1055
+
+     accuracy                           0.54     10773
+    macro avg       0.53      0.62      0.48     10773
+ weighted avg       0.70      0.54      0.51     10773
